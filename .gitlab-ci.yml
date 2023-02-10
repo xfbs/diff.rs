@@ -9,7 +9,7 @@ build:
     TRUNK_VERSION: 0.16.0
   before_script:
     - rustup target add wasm32-unknown-unknown
-    - wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+    - wget -qO- https://github.com/thedodd/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
   script:
     trunk build
   artifacts:
