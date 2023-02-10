@@ -1,0 +1,27 @@
+stages:
+  - build
+  - publish
+
+build:
+  stage: build
+  image: rust
+  variables:
+    TRUNK_VERSION: 0.16.0
+  before_script:
+    - rustup target add wasm32-unknown-unknown
+    - wget -qO- https://github.com/thedodd/trunk/releases/download/${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+  script:
+    trunk build
+  artifacts:
+    paths:
+      - dist
+
+
+pages:
+  stage: publish
+  image: alpine
+  script:
+    - mv dist public
+  artifacts:
+    paths:
+      - public
