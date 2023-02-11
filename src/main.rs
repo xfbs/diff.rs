@@ -3,6 +3,8 @@ use yew::prelude::*;
 use yew_router::prelude::{Switch, *};
 use yewprint::*;
 
+mod crates;
+
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
     #[at("/")]
@@ -33,6 +35,27 @@ fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
         Route::Crate { krate } => html! { <Crate name={krate} /> },
+        Route::Diff { krate, left, right } => html! {
+            <Diff
+                name={krate}
+                left={left}
+                right={right}
+                path={None as Option<String>}
+            />
+        },
+        Route::File {
+            krate,
+            left,
+            right,
+            path,
+        } => html! {
+            <Diff
+                name={krate}
+                left={left}
+                right={right}
+                path={Some(path)}
+            />
+        },
         _ => html! { <Crate name={"wireguard_keys"} /> },
     }
 }
@@ -83,6 +106,61 @@ pub struct CrateProps {
 
 #[function_component]
 fn Crate(props: &CrateProps) -> Html {
+    let counter = use_state(|| 0);
+    let onclick = {
+        let counter = counter.clone();
+        move |_| {
+            let value = *counter + 1;
+            counter.set(value);
+        }
+    };
+
+    html! {
+        <>
+            <div class="bp3-navbar bp3-fixed-top">
+                <div class="bp3-navbar-group bp3-align-left">
+                    <div class="bp3-navbar-heading"><a href="/">{ "diff.rs" }</a></div>
+                    <div class="bp3-navbar-divider"></div>
+                    <div class="bp3-navbar-heading">{ &props.name }</div>
+                    <div class="bp3-navbar-heading">
+                        <HtmlSelect<IString> options={[
+                            ("unknown".into(), "unknown".into()),
+                        ].into_iter().collect::<IArray<_>>()
+                        } />
+                    </div>
+                    <div class="bp3-navbar-heading">{ "diff" }</div>
+                    <div class="bp3-navbar-heading">
+                        <HtmlSelect<IString> options={[
+                            ("unknown".into(), "unknown".into()),
+                        ].into_iter().collect::<IArray<_>>()
+                        } />
+                    </div>
+                    <div class="bp3-navbar-divider"></div>
+                </div>
+                <div class="bp3-navbar-group bp3-align-right">
+                    <div class="bp3-navbar-heading bp3-fill">
+                        <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
+                    </div>
+                </div>
+            </div>
+        <div>
+            <button {onclick}>{ "+1" }</button>
+            <p>{ *counter }</p>
+        </div>
+        </>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct DiffProps {
+    pub name: String,
+    pub left: String,
+    pub right: String,
+    pub path: Option<String>,
+}
+
+#[function_component]
+fn Diff(props: &DiffProps) -> Html {
     let counter = use_state(|| 0);
     let onclick = {
         let counter = counter.clone();
