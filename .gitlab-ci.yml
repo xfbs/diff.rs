@@ -20,8 +20,12 @@ build:
 pages:
   stage: publish
   image: alpine
+  before_script:
+    - apk add brotli
   script:
     - mv dist public
+    - gzip -k public/*
+    - brotli -k public/*
   artifacts:
     paths:
       - public
