@@ -26,6 +26,7 @@ pages:
     - mv dist public
     - gzip -k public/*
     - brotli -k public/*
+    - echo '/* / 200' >> public/_redirects
   artifacts:
     paths:
       - public
