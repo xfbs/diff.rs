@@ -2,7 +2,7 @@ use crate::components::*;
 use implicit_clone::unsync::{IArray, IString};
 use yew::prelude::*;
 use yew_router::prelude::*;
-pub use yew_router::prelude::{Link, Redirect};
+pub use yew_router::prelude::{use_navigator, Link, Redirect};
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {

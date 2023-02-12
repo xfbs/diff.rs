@@ -3,6 +3,7 @@ use implicit_clone::unsync::{IArray, IString};
 use log::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew_icons::{Icon as YewIcon, IconId};
 use yewprint::*;
 
 mod navigation;
@@ -14,7 +15,7 @@ pub fn Home() -> Html {
         <>
         <Navbar>
             <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}>{ "diff.rs" }</Link<Route>></NavbarHeading>
+                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
                 <div class="bp3-navbar-heading bp3-fill">
                     <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
@@ -64,9 +65,9 @@ pub fn Crate(props: &CrateProps) -> Html {
         <>
         <Navbar>
             <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}>{ "diff.rs" }</Link<Route>></NavbarHeading>
+                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
-                <NavbarHeading>{ &props.name }</NavbarHeading>
+                <NavbarHeading><YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }</NavbarHeading>
                 <NavbarHeading>
                     <HtmlSelect<IString> minimal={true} disabled={true} options={[
                         ("left".into(), "left".into()),
@@ -82,11 +83,11 @@ pub fn Crate(props: &CrateProps) -> Html {
                 </NavbarHeading>
                 <NavbarDivider />
             </NavbarGroup>
-            <NavbarGroup>
+            <div class="bp3-navbar-group bp3-align-right">
                 <div class="bp3-navbar-heading bp3-fill">
                     <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
                 </div>
-            </NavbarGroup>
+            </div>
         </Navbar>
         <div style="height: 50;"></div>
         {
@@ -135,6 +136,7 @@ impl DiffState {
 #[function_component]
 pub fn Diff(props: &DiffProps) -> Html {
     let state = use_state(|| DiffState::Initial);
+    let navigator = use_navigator().unwrap();
 
     // load crate versions
     if *state == DiffState::Initial {
@@ -165,19 +167,31 @@ pub fn Diff(props: &DiffProps) -> Html {
             .map(|version| (version.to_string().into(), version.to_string().into()))
             .collect(),
     };
+
     html! {
         <>
         <Navbar>
             <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}>{ "diff.rs" }</Link<Route>></NavbarHeading>
+                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
-                <NavbarHeading>{ &props.name }</NavbarHeading>
+                <NavbarHeading><YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }</NavbarHeading>
                 <NavbarHeading>
                     <HtmlSelect<IString>
                         minimal={true}
                         options={versions.clone()}
                         disabled={!have_versions}
                         value={Some(props.left.clone().into()) as Option<IString>}
+                        onchange={
+                            let navigator = navigator.clone();
+                            let props = props.clone();
+                            Callback::from(move |version: IString| {
+                                navigator.push(&Route::Diff {
+                                    krate: props.name.clone(),
+                                    left: version.to_string(),
+                                    right: props.right.clone(),
+                                });
+                            })
+                        }
                     />
                 </NavbarHeading>
                 <NavbarHeading>{ "diff" }</NavbarHeading>
@@ -187,6 +201,17 @@ pub fn Diff(props: &DiffProps) -> Html {
                         options={versions.clone()}
                         disabled={!have_versions}
                         value={Some(props.right.clone().into()) as Option<IString>}
+                        onchange={
+                            let navigator = navigator.clone();
+                            let props = props.clone();
+                            Callback::from(move |version: IString| {
+                                navigator.push(&Route::Diff {
+                                    krate: props.name.clone(),
+                                    right: version.to_string(),
+                                    left: props.left.clone(),
+                                });
+                            })
+                        }
                     />
                 </NavbarHeading>
                 <NavbarDivider />
