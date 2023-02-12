@@ -5,7 +5,7 @@ use url::Url;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CrateResponse {
-    pub categories: BTreeSet<String>,
+    //pub categories: BTreeSet<String>,
     #[serde(rename = "crate")]
     pub krate: CrateInfo,
     pub versions: Vec<VersionInfo>,
@@ -18,6 +18,8 @@ pub struct CrateInfo {
     pub downloads: u64,
     pub exact_match: bool,
     pub homepage: Option<Url>,
+    pub max_version: String,
+    pub max_stable_version: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -25,14 +27,16 @@ pub struct VersionInfo {
     pub checksum: String,
     #[serde(rename = "crate")]
     pub krate: String,
-    pub crate_size: u64,
+    pub crate_size: Option<u64>,
     pub dl_path: String,
     pub downloads: u64,
-    pub license: String,
+    pub license: Option<String>,
     pub yanked: bool,
+    pub id: u64,
+    pub num: String,
 }
 
-async fn crate_info(name: &str) -> Result<CrateResponse> {
+pub async fn crate_info(name: &str) -> Result<CrateResponse> {
     let base: Url = "https://crates.io/api/v1/crates/".parse()?;
     let url = base.join(name)?;
     let response = reqwest::get(url.as_str()).await?;
