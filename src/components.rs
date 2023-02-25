@@ -9,6 +9,38 @@ use yewprint::*;
 mod navigation;
 use navigation::*;
 
+#[derive(Properties, PartialEq)]
+pub struct ProgressProps {
+    pub progress: f64,
+    pub status: String,
+}
+
+#[function_component]
+pub fn Progress(props: &ProgressProps) -> Html {
+    html! {
+        <>
+        <div class="bp3-progress-bar">
+            <div class="bp3-progress-meter" style={format!("width: {}%", (100.0 * props.progress) as u8)}></div>
+        </div>
+        { &props.status }
+        </>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CenterProps {
+    pub children: Children,
+}
+
+#[function_component]
+pub fn Center(props: &CenterProps) -> Html {
+    html! {
+        <div style="position: absolute; top: 50%; width: 100%; text-align: center;">
+        { for props.children.iter() }
+        </div>
+    }
+}
+
 #[function_component]
 pub fn Home() -> Html {
     html! {
@@ -95,22 +127,32 @@ pub fn Crate(props: &CrateProps) -> Html {
                 </div>
             </div>
         </Navbar>
-        <div style="height: 50;"></div>
-        {
-            match &*state {
-                CrateState::Initial => html!{ {"Initial"} },
-                CrateState::Loading => html! { {"Loading"} },
-                CrateState::NotExists => html! { {"Not exists"} },
-                CrateState::Error(error) => html!{ {format!("Error: {error}")} },
-                CrateState::Version(left, right) => html!{
-                    <Redirect<Route> to={Route::Diff {
-                        krate: props.name.clone(),
-                        left: left.clone(),
-                        right: right.clone(),
-                    }} />
-                },
+        <div style="height: 50px;"></div>
+        <Center>
+            {
+                match &*state {
+                    CrateState::Initial => html!{
+                        <Progress progress={0.0} status={"Initial"} />
+                    },
+                    CrateState::Loading => html! {
+                        <Progress progress={0.1} status={"Loading crate information"} />
+                    },
+                    CrateState::NotExists => html! {
+                        <Progress progress={0.2} status={"Error: crate does not exist"} />
+                    },
+                    CrateState::Error(error) => html!{
+                        <Progress progress={0.2} status={error.clone()} />
+                    },
+                    CrateState::Version(left, right) => html!{
+                        <Redirect<Route> to={Route::Diff {
+                            krate: props.name.clone(),
+                            left: left.clone(),
+                            right: right.clone(),
+                        }} />
+                    },
+                }
             }
-        }
+        </Center>
         </>
     }
 }
@@ -239,7 +281,17 @@ pub fn Diff(props: &DiffProps) -> Html {
                 DiffState::Loading => html! { {"Loading"} },
                 DiffState::NotExists => html! { {"Not exists"} },
                 DiffState::Error(error) => html!{ {format!("Error: {error}")} },
-                DiffState::Versions(versions) => html!{ {"Version"} },
+                DiffState::Versions(versions) => html!{
+                    <div class="bp3-non-ideal-state">
+                      <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
+                        <Spinner size={48.0} />
+                      </div>
+                      <div class="bp3-non-ideal-state-text">
+                        <h4 class="bp3-heading">{ "This folder is empty" }</h4>
+                        <div>{ "Create a new file to populate the folder." }</div>
+                      </div>
+                    </div>
+                },
             }
         }
         </>
