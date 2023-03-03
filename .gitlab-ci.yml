@@ -24,7 +24,7 @@ pages:
   before_script:
     - apk add brotli
   script:
-    - export FILES=(ls dist)
+    - export FILES=$(ls dist)
     - gzip -k $FILES
     - brotli -k $FILES
     - mv dist public
