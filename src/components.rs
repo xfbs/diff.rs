@@ -1,3 +1,4 @@
+use crate::crates::CrateInfo;
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use log::*;
@@ -8,24 +9,6 @@ use yewprint::*;
 
 mod navigation;
 use navigation::*;
-
-#[derive(Properties, PartialEq)]
-pub struct ProgressProps {
-    pub progress: f64,
-    pub status: String,
-}
-
-#[function_component]
-pub fn Progress(props: &ProgressProps) -> Html {
-    html! {
-        <>
-        <div class="bp3-progress-bar">
-            <div class="bp3-progress-meter" style={format!("width: {}%", (100.0 * props.progress) as u8)}></div>
-        </div>
-        { &props.status }
-        </>
-    }
-}
 
 #[derive(Properties, PartialEq)]
 pub struct CenterProps {
@@ -150,10 +133,10 @@ pub fn Crate(props: &CrateProps) -> Html {
         let props = props.clone();
         spawn_local(async move {
             state.set(CrateState::Loading);
-            match crate::crates::crate_info(&props.name).await {
+            match CrateInfo::fetch_cached(&props.name).await {
                 Ok(info) => state.set(CrateState::Version(
-                    info.krate.max_version,
-                    info.krate.max_stable_version,
+                    info.krate.max_version.clone(),
+                    info.krate.max_stable_version.clone(),
                 )),
                 Err(error) => state.set(CrateState::Error(error.to_string())),
             }
@@ -233,47 +216,50 @@ pub struct DiffProps {
 #[derive(Clone, PartialEq, Eq, Default)]
 pub enum DiffState {
     #[default]
-    Initial,
     Loading,
-    Versions(Vec<String>),
+    Versions,
     Error(String),
     NotExists,
 }
 
 impl DiffState {
     fn is_versions(&self) -> bool {
-        matches!(self, DiffState::Versions(_))
+        matches!(self, DiffState::Versions)
     }
 }
 
 #[function_component]
 pub fn Diff(props: &DiffProps) -> Html {
-    let state = use_state(|| DiffState::Initial);
+    let state = use_state(|| DiffState::Loading);
     let navigator = use_navigator().unwrap();
 
     // load crate versions
-    if *state == DiffState::Initial {
+    if *state == DiffState::Loading {
         let state = state.clone();
         let props = props.clone();
         spawn_local(async move {
-            state.set(DiffState::Loading);
-            match crate::crates::crate_info(&props.name).await {
-                Ok(info) => state.set(DiffState::Versions(
-                    info.versions
-                        .into_iter()
-                        .map(|version| version.num)
-                        .collect(),
-                )),
+            match CrateInfo::fetch_cached(&props.name).await {
+                Ok(info) => state.set(DiffState::Versions),
                 Err(error) => state.set(DiffState::Error(error.to_string())),
             }
         });
     }
 
-    let have_versions = matches!(&*state, DiffState::Versions(_));
+    if *state == DiffState::Versions {
+        let state = state.clone();
+        let props = props.clone();
+        spawn_local(async move {
+            // todo
+        });
+    }
+
+    let have_versions = state.is_versions();
     let versions: IArray<(IString, AttrValue)> = match &*state {
-        DiffState::Versions(versions) => versions
+        DiffState::Versions => CrateInfo::cached(&props.name)
+            .unwrap()
+            .versions
             .iter()
-            .map(|version| (version.clone().into(), version.clone().into()))
+            .map(|version| (version.num.clone().into(), version.num.clone().into()))
             .collect(),
         _ => [&props.left, &props.right]
             .iter()
@@ -343,15 +329,12 @@ pub fn Diff(props: &DiffProps) -> Html {
         <Center>
         {
             match &*state {
-                DiffState::Initial => html!{
-                    <Loading title={"Loading crate"} status={""} />
-                },
                 DiffState::Loading => html! {
                     <Loading title={"Loading crate"} status={"Loading crate version information"} />
                 },
                 DiffState::NotExists => html! { {"Not exists"} },
                 DiffState::Error(error) => html!{ {format!("Error: {error}")} },
-                DiffState::Versions(versions) => html!{
+                DiffState::Versions => html!{
                     <Loading title={"Loading crate"} status={"Loading crate source"} />
                 },
             }
