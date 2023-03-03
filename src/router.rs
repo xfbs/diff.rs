@@ -55,6 +55,7 @@ fn switch(route: Route) -> Html {
                 path={Some(path)}
             />
         },
+        Route::NotFound => html! { <NotFound /> },
         _ => html! { <Crate name={"wireguard_keys"} /> },
     }
 }

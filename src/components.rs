@@ -42,9 +42,8 @@ pub fn Center(props: &CenterProps) -> Html {
 }
 
 #[function_component]
-pub fn Home() -> Html {
+pub fn SimpleNavbar() -> Html {
     html! {
-        <>
         <Navbar>
             <NavbarGroup>
                 <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
@@ -56,7 +55,73 @@ pub fn Home() -> Html {
                 </div>
             </div>
         </Navbar>
+    }
+}
+
+#[function_component]
+pub fn Home() -> Html {
+    html! {
+        <>
+            <SimpleNavbar />
+            <div style="height: 50px;"></div>
+            <div class="content">
+                <h1>{ "diff.rs" }</h1>
+                <p>{ "View the differences between crates." }</p>
+            </div>
         </>
+    }
+}
+
+#[function_component]
+pub fn NotFound() -> Html {
+    html! {
+        <>
+            <SimpleNavbar />
+            <div style="height: 50px;"></div>
+            <Error title={"Not found"} status={"The URL was not found"} />
+        </>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct ErrorProps {
+    pub title: String,
+    pub status: String,
+}
+
+#[function_component]
+pub fn Error(props: &ErrorProps) -> Html {
+    html! {
+        <div class="bp3-non-ideal-state">
+            <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
+                <Icon icon={Icon::Error} intent={Intent::Danger} size={48} />
+            </div>
+            <div class="bp3-non-ideal-state-text">
+                <h4 class="bp3-heading">{ &props.title }</h4>
+                <div>{ &props.status }</div>
+            </div>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct LoadingProps {
+    pub title: String,
+    pub status: String,
+}
+
+#[function_component]
+pub fn Loading(props: &LoadingProps) -> Html {
+    html! {
+        <div class="bp3-non-ideal-state">
+            <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
+                <Spinner size={48.0} />
+            </div>
+            <div class="bp3-non-ideal-state-text">
+                <h4 class="bp3-heading">{ &props.title }</h4>
+                <div>{ &props.status }</div>
+            </div>
+        </div>
     }
 }
 
@@ -132,16 +197,16 @@ pub fn Crate(props: &CrateProps) -> Html {
             {
                 match &*state {
                     CrateState::Initial => html!{
-                        <Progress progress={0.0} status={"Initial"} />
+                        <Loading title={"Loading crate"} status={""} />
                     },
                     CrateState::Loading => html! {
-                        <Progress progress={0.1} status={"Loading crate information"} />
+                        <Loading title={"Loading crate"} status={"Loading crate information"} />
                     },
                     CrateState::NotExists => html! {
-                        <Progress progress={0.2} status={"Error: crate does not exist"} />
+                        <Error title={"Loading crate"} status={"The crate does not exist"} />
                     },
                     CrateState::Error(error) => html!{
-                        <Progress progress={0.2} status={error.clone()} />
+                        <Error title={"Loading crate"} status={error.to_string()} />
                     },
                     CrateState::Version(left, right) => html!{
                         <Redirect<Route> to={Route::Diff {
@@ -275,25 +340,23 @@ pub fn Diff(props: &DiffProps) -> Html {
             </div>
         </Navbar>
         <div style="height: 50px;"></div>
+        <Center>
         {
             match &*state {
-                DiffState::Initial => html!{ {"Initial"} },
-                DiffState::Loading => html! { {"Loading"} },
+                DiffState::Initial => html!{
+                    <Loading title={"Loading crate"} status={""} />
+                },
+                DiffState::Loading => html! {
+                    <Loading title={"Loading crate"} status={"Loading crate version information"} />
+                },
                 DiffState::NotExists => html! { {"Not exists"} },
                 DiffState::Error(error) => html!{ {format!("Error: {error}")} },
                 DiffState::Versions(versions) => html!{
-                    <div class="bp3-non-ideal-state">
-                      <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
-                        <Spinner size={48.0} />
-                      </div>
-                      <div class="bp3-non-ideal-state-text">
-                        <h4 class="bp3-heading">{ "This folder is empty" }</h4>
-                        <div>{ "Create a new file to populate the folder." }</div>
-                      </div>
-                    </div>
+                    <Loading title={"Loading crate"} status={"Loading crate source"} />
                 },
             }
         }
+        </Center>
         </>
     }
 }
