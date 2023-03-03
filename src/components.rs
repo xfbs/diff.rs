@@ -17,10 +17,12 @@ pub fn Home() -> Html {
             <NavbarGroup>
                 <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
+            </NavbarGroup>
+            <div class="bp3-navbar-group bp3-align-right">
                 <div class="bp3-navbar-heading bp3-fill">
                     <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
                 </div>
-            </NavbarGroup>
+            </div>
         </Navbar>
         </>
     }
@@ -67,7 +69,11 @@ pub fn Crate(props: &CrateProps) -> Html {
             <NavbarGroup>
                 <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
-                <NavbarHeading><YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }</NavbarHeading>
+                <NavbarHeading>
+                    <a href={format!("https://crates.io/crates/{}", props.name)}>
+                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }
+                    </a>
+                </NavbarHeading>
                 <NavbarHeading>
                     <HtmlSelect<IString> minimal={true} disabled={true} options={[
                         ("left".into(), "left".into()),
@@ -174,7 +180,11 @@ pub fn Diff(props: &DiffProps) -> Html {
             <NavbarGroup>
                 <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
-                <NavbarHeading><YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }</NavbarHeading>
+                <NavbarHeading>
+                    <a href={format!("https://crates.io/crates/{}", props.name)}>
+                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }
+                    </a>
+                </NavbarHeading>
                 <NavbarHeading>
                     <HtmlSelect<IString>
                         minimal={true}
