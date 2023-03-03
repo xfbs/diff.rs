@@ -2,6 +2,7 @@ stages:
   - build
   - publish
 
+# build stage: builds everything using trunk.
 build:
   stage: build
   image: rust
@@ -16,16 +17,17 @@ build:
     paths:
       - dist
 
-
+# pages job: compress files and publish statically.
 pages:
   stage: publish
   image: alpine
   before_script:
     - apk add brotli
   script:
+    - export FILES=(dist/*)
+    - gzip -k ${FILES[@]}
+    - brotli -k ${FILES[@]}
     - mv dist public
-    - gzip -k public/*
-    - brotli -k public/*
     - echo '/* / 200' >> public/_redirects
   artifacts:
     paths:
