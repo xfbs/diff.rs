@@ -1,7 +1,8 @@
-use crate::crates::CrateInfo;
+use crate::crates::{CrateInfo, CrateResponse, CrateSource};
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use log::*;
+use std::sync::Arc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_icons::{Icon as YewIcon, IconId};
@@ -217,15 +218,9 @@ pub struct DiffProps {
 pub enum DiffState {
     #[default]
     Loading,
-    Versions,
+    CrateInfo(Arc<CrateResponse>),
+    CrateSource(Arc<CrateResponse>, Arc<CrateSource>, Arc<CrateSource>),
     Error(String),
-    NotExists,
-}
-
-impl DiffState {
-    fn is_versions(&self) -> bool {
-        matches!(self, DiffState::Versions)
-    }
 }
 
 #[function_component]
@@ -251,7 +246,7 @@ pub fn Diff(props: &DiffProps) -> Html {
                             props.right
                         )));
                     } else {
-                        state.set(DiffState::Versions);
+                        state.set(DiffState::CrateInfo(info));
                     }
                 }
                 Err(error) => state.set(DiffState::Error(error.to_string())),
@@ -265,9 +260,8 @@ pub fn Diff(props: &DiffProps) -> Html {
         .map(|version| (version.to_string().into(), version.to_string().into()))
         .collect();
 
-    if *state == DiffState::Versions {
+    if let DiffState::CrateInfo(crate_info) = &*state {
         have_versions = true;
-        let crate_info = CrateInfo::cached(&props.name).unwrap();
         versions = crate_info
             .versions
             .iter()
@@ -287,16 +281,23 @@ pub fn Diff(props: &DiffProps) -> Html {
             .clone();
         let state = state.clone();
         let props = props.clone();
+        let crate_info = crate_info.clone();
         spawn_local(async move {
-            match left.fetch().await {
-                Ok(source) => {}
-                Err(error) => state.set(DiffState::Error(error.to_string())),
-            }
-            match right.fetch().await {
-                Ok(source) => {}
-                Err(error) => state.set(DiffState::Error(error.to_string())),
-            }
-            state.set(DiffState::Error("have data".into()));
+            let left = match left.fetch_cached().await {
+                Ok(source) => source,
+                Err(error) => {
+                    state.set(DiffState::Error(error.to_string()));
+                    return;
+                }
+            };
+            let right = match right.fetch_cached().await {
+                Ok(source) => source,
+                Err(error) => {
+                    state.set(DiffState::Error(error.to_string()));
+                    return;
+                }
+            };
+            state.set(DiffState::CrateSource(crate_info, left, right));
         });
     }
 
@@ -359,22 +360,36 @@ pub fn Diff(props: &DiffProps) -> Html {
             </div>
         </Navbar>
         <div style="height: 50px;"></div>
-        <Center>
         {
             match &*state {
                 DiffState::Loading => html! {
+                    <Center>
                     <Loading title={"Loading crate"} status={"Loading crate version information"} />
+                    </Center>
                 },
-                DiffState::NotExists => html! { {"Not exists"} },
                 DiffState::Error(error) => html!{
+                    <Center>
                     <Error title={"Error loading crate"} status={error.clone()} />
+                    </Center>
                 },
-                DiffState::Versions => html!{
+                DiffState::CrateInfo(_) => html!{
+                    <Center>
                     <Loading title={"Loading crate"} status={"Loading crate source"} />
+                    </Center>
+                },
+                DiffState::CrateSource(_, left, _) if props.path.is_none() => html!{
+                    <Redirect<Route> to={Route::File {
+                        krate: props.name.clone(),
+                        left: props.left.clone(),
+                        right: props.right.clone(),
+                        path: "Cargo.toml".into(),
+                    }} />
+                },
+                DiffState::CrateSource(_, left, _) => html!{
+                    <p> {format!("{:?}", left)} </p>
                 },
             }
         }
-        </Center>
         </>
     }
 }
