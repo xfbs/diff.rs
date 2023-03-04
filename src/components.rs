@@ -239,33 +239,66 @@ pub fn Diff(props: &DiffProps) -> Html {
         let props = props.clone();
         spawn_local(async move {
             match CrateInfo::fetch_cached(&props.name).await {
-                Ok(info) => state.set(DiffState::Versions),
+                Ok(info) => {
+                    if !info.versions.iter().any(|v| v.num == props.left) {
+                        state.set(DiffState::Error(format!(
+                            "Version {} not found",
+                            props.left
+                        )));
+                    } else if !info.versions.iter().any(|v| v.num == props.right) {
+                        state.set(DiffState::Error(format!(
+                            "Version {} not found",
+                            props.right
+                        )));
+                    } else {
+                        state.set(DiffState::Versions);
+                    }
+                }
                 Err(error) => state.set(DiffState::Error(error.to_string())),
             }
         });
     }
 
-    if *state == DiffState::Versions {
-        let state = state.clone();
-        let props = props.clone();
-        spawn_local(async move {
-            // todo
-        });
-    }
+    let mut have_versions = false;
+    let mut versions: IArray<(IString, AttrValue)> = [&props.left, &props.right]
+        .iter()
+        .map(|version| (version.to_string().into(), version.to_string().into()))
+        .collect();
 
-    let have_versions = state.is_versions();
-    let versions: IArray<(IString, AttrValue)> = match &*state {
-        DiffState::Versions => CrateInfo::cached(&props.name)
-            .unwrap()
+    if *state == DiffState::Versions {
+        have_versions = true;
+        let crate_info = CrateInfo::cached(&props.name).unwrap();
+        versions = crate_info
             .versions
             .iter()
             .map(|version| (version.num.clone().into(), version.num.clone().into()))
-            .collect(),
-        _ => [&props.left, &props.right]
+            .collect();
+        let left = crate_info
+            .versions
             .iter()
-            .map(|version| (version.to_string().into(), version.to_string().into()))
-            .collect(),
-    };
+            .find(|v| v.num == props.left)
+            .unwrap()
+            .clone();
+        let right = crate_info
+            .versions
+            .iter()
+            .find(|v| v.num == props.right)
+            .unwrap()
+            .clone();
+        let state = state.clone();
+        let props = props.clone();
+        spawn_local(async move {
+            match left.fetch().await {
+                Ok(source) => {}
+                Err(error) => state.set(DiffState::Error(error.to_string())),
+            }
+            match right.fetch().await {
+                Ok(source) => {}
+                Err(error) => state.set(DiffState::Error(error.to_string())),
+            }
+            state.set(DiffState::Error("have data".into()));
+        });
+    }
 
     html! {
         <>
@@ -333,7 +366,9 @@ pub fn Diff(props: &DiffProps) -> Html {
                     <Loading title={"Loading crate"} status={"Loading crate version information"} />
                 },
                 DiffState::NotExists => html! { {"Not exists"} },
-                DiffState::Error(error) => html!{ {format!("Error: {error}")} },
+                DiffState::Error(error) => html!{
+                    <Error title={"Error loading crate"} status={error.clone()} />
+                },
                 DiffState::Versions => html!{
                     <Loading title={"Loading crate"} status={"Loading crate source"} />
                 },

@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Result};
+use flate2::bufread::GzDecoder;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::Read;
 use std::sync::{Arc, Mutex};
+use tar::Archive;
 use url::Url;
 
 pub static CRATE_INFO_CACHE: Mutex<BTreeMap<String, Arc<CrateResponse>>> =
@@ -78,7 +81,44 @@ impl CrateInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+impl VersionInfo {
+    pub async fn fetch(&self) -> Result<CrateSource> {
+        let base: Url = "https://crates.io/".parse()?;
+        let url = base.join(&self.dl_path)?;
+        let response = reqwest::get(url.as_str()).await?;
+        if response.status().is_success() {
+            let bytes = response.bytes().await?;
+            Ok(CrateSource::parse_compressed(&bytes[..])?)
+        } else {
+            Err(anyhow!("Error response: {}", response.status()))
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CrateSource {
     pub files: BTreeMap<String, String>,
+}
+
+impl CrateSource {
+    pub fn parse_compressed(data: &[u8]) -> Result<Self> {
+        let mut decoder = GzDecoder::new(data);
+        Self::parse_archive(&mut decoder)
+    }
+
+    pub fn parse_archive(data: &mut dyn Read) -> Result<Self> {
+        let mut archive = Archive::new(data);
+        let mut source = Self::default();
+        for entry in archive.entries()? {
+            let mut entry = entry?;
+            let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
+            let data = std::io::read_to_string(&mut entry)?;
+            source.add(&path, data);
+        }
+        Ok(source)
+    }
+
+    pub fn add(&mut self, path: &str, data: String) {
+        self.files.insert(path.to_string(), data);
+    }
 }
