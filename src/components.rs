@@ -225,6 +225,7 @@ pub enum DiffState {
 
 #[function_component]
 pub fn Diff(props: &DiffProps) -> Html {
+    info!("Instantiating diff");
     let state = use_state(|| DiffState::Loading);
     let navigator = use_navigator().unwrap();
 
@@ -254,19 +255,24 @@ pub fn Diff(props: &DiffProps) -> Html {
         });
     }
 
-    let mut have_versions = false;
-    let mut versions: IArray<(IString, AttrValue)> = [&props.left, &props.right]
-        .iter()
-        .map(|version| (version.to_string().into(), version.to_string().into()))
-        .collect();
+    let (have_versions, versions): (bool, IArray<(IString, AttrValue)>) = match &*state {
+        DiffState::CrateInfo(info) | DiffState::CrateSource(info, _, _) => (
+            true,
+            info.versions
+                .iter()
+                .map(|version| (version.num.clone().into(), version.num.clone().into()))
+                .collect(),
+        ),
+        _ => (
+            false,
+            [&props.left, &props.right]
+                .iter()
+                .map(|version| (version.to_string().into(), version.to_string().into()))
+                .collect(),
+        ),
+    };
 
     if let DiffState::CrateInfo(crate_info) = &*state {
-        have_versions = true;
-        versions = crate_info
-            .versions
-            .iter()
-            .map(|version| (version.num.clone().into(), version.num.clone().into()))
-            .collect();
         let left = crate_info
             .versions
             .iter()
