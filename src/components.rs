@@ -5,6 +5,7 @@ use log::*;
 use std::sync::Arc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew::suspense::*;
 use yew_icons::{Icon as YewIcon, IconId};
 use yewprint::*;
 
@@ -214,6 +215,7 @@ pub struct DiffProps {
     pub path: Option<String>,
 }
 
+// instead of using state here, use the use_future thingy.
 #[derive(Clone, PartialEq, Eq, Default)]
 pub enum DiffState {
     #[default]
@@ -397,5 +399,21 @@ pub fn Diff(props: &DiffProps) -> Html {
             }
         }
         </>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct DiffViewerProps {
+    pub name: String,
+    pub left: Option<String>,
+    pub right: Option<String>,
+    pub path: Option<String>,
+}
+
+#[function_component]
+pub fn DiffViewer(props: &DiffViewerProps) -> Html {
+    let crate_info = use_future_with_deps(|name| async move {CrateInfo::fetch_cached(&name).await }, props.name.clone());
+    html! {
+        <p>{"test"}</p>
     }
 }

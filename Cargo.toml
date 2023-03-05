@@ -11,6 +11,7 @@ implicit-clone = "0.3.5"
 log = "0.4.17"
 reqwest = { version = "0.11.14", features = ["json"] }
 serde = { version = "1.0.152", features = ["derive"] }
+similar = "2.2.1"
 tar = "0.4.38"
 url = { version = "2.3.1", features = ["serde"] }
 wasm-bindgen-futures = "0.4.34"
