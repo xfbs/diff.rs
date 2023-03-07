@@ -1,4 +1,3 @@
-use super::*;
 use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
 use crate::router::*;
 use similar::{ChangeTag, TextDiff};
@@ -6,6 +5,7 @@ use std::sync::Arc;
 use yew::prelude::*;
 use yew::suspense::*;
 use yew_icons::{Icon as YewIcon, IconId};
+use super::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {
@@ -36,27 +36,49 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         let name = props.info.krate.id.clone();
         let left = props.left.version.num.clone();
         let right = props.right.version.num.clone();
-        move |path: String| {
-            navigator.push(&Route::File {
-                name: name.clone(),
-                left: left.clone(),
-                right: right.clone(),
-                path,
-            })
-        }
+        let navigator = navigator.clone();
+        move |path: String| navigator.push(&Route::File {
+            name: name.clone(),
+            left: left.clone(),
+            right: right.clone(),
+            path,
+        })
     };
     html! {
         <>
-        <div style="width: 200px;">
-        <FileTree
-            info={props.info.clone()}
-            left={props.left.clone()}
-            right={props.right.clone()}
-            path={props.path.clone()}
-            {onselect}
+        <ComplexNavbar
+            name={props.info.krate.id.clone()}
+            left={props.left.version.num.clone()}
+            right={props.right.version.num.clone()}
+            versions={props.info.versions.iter().map(|v| v.num.clone()).collect::<Vec<_>>()}
+            onchange={
+                let name = props.info.krate.id.clone();
+                let path = props.path.clone();
+                let navigator = navigator.clone();
+                move |(left, right)| {
+                    navigator.push(&Route::File {
+                        name: name.clone(),
+                        left: left,
+                        right: right,
+                        path: path.clone(),
+                    });
+                }
+            }
         />
+        <div style="margin-top: 50px; display: flex;">
+            <div style="width: 300px;">
+                <FileTree
+                    info={props.info.clone()}
+                    left={props.left.clone()}
+                    right={props.right.clone()}
+                    path={props.path.clone()}
+                    {onselect}
+                />
+            </div>
+            <div style="width: 50%;">
+                <DiffView {left} {right} path={props.path.clone()} />
+            </div>
         </div>
-        <DiffView {left} {right} path={props.path.clone()} />
         </>
     }
 }
