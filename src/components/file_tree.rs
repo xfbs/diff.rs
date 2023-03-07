@@ -164,6 +164,7 @@ pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
         match segment {
             Position::First(s) | Position::Middle(s) => {
                 node.data_mut().is_expanded = true;
+                node.data_mut().icon = Icon::FolderOpen;
             }
             Position::Last(s) | Position::Only(s) => {
                 node.data_mut().is_selected = true;

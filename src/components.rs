@@ -1,6 +1,6 @@
 use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
-use implicit_clone::unsync::{IString, IArray};
 use crate::router::*;
+use implicit_clone::unsync::{IArray, IString};
 use similar::{ChangeTag, TextDiff};
 use std::sync::Arc;
 use yew::prelude::*;
@@ -9,132 +9,27 @@ use yew_icons::{Icon as YewIcon, IconId};
 use yewprint::*;
 mod navigation;
 use navigation::*;
+mod diff_view;
 mod file_tree;
 mod legacy;
-mod diff_view;
 use diff_view::*;
 use file_tree::*;
-
-#[derive(Properties, PartialEq)]
-pub struct CenterProps {
-    pub children: Children,
-}
-
-#[function_component]
-pub fn Center(props: &CenterProps) -> Html {
-    html! {
-        <div style="position: absolute; top: 50%; width: 100%; text-align: center;">
-        { for props.children.iter() }
-        </div>
-    }
-}
-
-#[function_component]
-pub fn SimpleNavbar() -> Html {
-    html! {
-        <Navbar>
-            <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
-                <NavbarDivider />
-            </NavbarGroup>
-            <div class="bp3-navbar-group bp3-align-right">
-                <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
-                </div>
-            </div>
-        </Navbar>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct ComplexNavbarProps {
-    name: String,
-    left: String,
-    right: String,
-    #[prop_or_default]
-    versions: Vec<String>,
-    #[prop_or_default]
-    onchange: Callback<(String, String)>,
-}
-
-#[function_component]
-pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
-    let disabled = vec![props.left.clone(), props.right.clone()];
-    let versions = match props.versions.is_empty() {
-        true => &disabled,
-        false => &props.versions,
-    };
-
-    let versions: IArray<(IString, AttrValue)> = versions
-        .iter().map(|v| IString::from(v.clone()))
-        .map(|val| (val.clone(), val.clone()))
-        .collect();
-
-    html! {
-        <Navbar>
-            <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
-                <NavbarDivider />
-                <NavbarHeading>
-                    { &props.name }
-                </NavbarHeading>
-                <NavbarHeading>
-                    <a href={format!("https://crates.io/crates/{}", props.name)}>
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { "crates.io" }
-                    </a>
-                </NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString>
-                        minimal={true}
-                        options={versions.clone()}
-                        disabled={props.versions.is_empty()}
-                        value={Some(props.left.clone().into()) as Option<IString>}
-                        onchange={
-                            let onchange = props.onchange.clone();
-                            let right = props.right.clone();
-                            move |left: IString| {
-                                onchange.emit((left.to_string(), right.clone()))
-                            }
-                        }
-                    />
-                </NavbarHeading>
-                <NavbarHeading>{ "diff" }</NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString>
-                        minimal={true}
-                        options={versions.clone()}
-                        disabled={props.versions.is_empty()}
-                        value={Some(props.right.clone().into()) as Option<IString>}
-                        onchange={
-                            let onchange = props.onchange.clone();
-                            let left = props.left.clone();
-                            move |right: IString| {
-                                onchange.emit((left.clone(), right.to_string()))
-                            }
-                        }
-                    />
-                </NavbarHeading>
-                <NavbarDivider />
-            </NavbarGroup>
-            <div class="bp3-navbar-group bp3-align-right">
-                <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
-                </div>
-            </div>
-        </Navbar>
-    }
-}
+mod layout;
+use layout::*;
+mod non_ideal;
+use non_ideal::*;
 
 #[function_component]
 pub fn Home() -> Html {
     html! {
         <>
             <SimpleNavbar />
-            <div style="height: 50px;"></div>
-            <div class="content">
-                <h1>{ "diff.rs" }</h1>
-                <p>{ "View the differences between crates." }</p>
-            </div>
+            <Content>
+                <div class="content">
+                    <h1>{ "diff.rs" }</h1>
+                    <p>{ "View the differences between crates." }</p>
+                </div>
+            </Content>
         </>
     }
 }
@@ -144,51 +39,10 @@ pub fn NotFound() -> Html {
     html! {
         <>
             <SimpleNavbar />
-            <div style="height: 50px;"></div>
-            <Error title={"Not found"} status={"The URL was not found"} />
+            <Content>
+                <Error title={"Not found"} status={"The URL was not found"} />
+            </Content>
         </>
-    }
-}
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct ErrorProps {
-    pub title: String,
-    pub status: String,
-}
-
-#[function_component]
-pub fn Error(props: &ErrorProps) -> Html {
-    html! {
-        <div class="bp3-non-ideal-state">
-            <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
-                <Icon icon={Icon::Error} intent={Intent::Danger} size={48} />
-            </div>
-            <div class="bp3-non-ideal-state-text">
-                <h4 class="bp3-heading">{ &props.title }</h4>
-                <div>{ &props.status }</div>
-            </div>
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct LoadingProps {
-    pub title: String,
-    pub status: String,
-}
-
-#[function_component]
-pub fn Loading(props: &LoadingProps) -> Html {
-    html! {
-        <div class="bp3-non-ideal-state">
-            <div class="bp3-non-ideal-state-visual" style="font-size: 48px; line-height: 48px;">
-                <Spinner size={48.0} />
-            </div>
-            <div class="bp3-non-ideal-state-text">
-                <h4 class="bp3-heading">{ &props.title }</h4>
-                <div>{ &props.status }</div>
-            </div>
-        </div>
     }
 }
 

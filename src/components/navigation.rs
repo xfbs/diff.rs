@@ -1,4 +1,11 @@
+use super::*;
+use crate::router::*;
+use similar::{ChangeTag, TextDiff};
+use std::sync::Arc;
 use yew::prelude::*;
+use yew::prelude::*;
+use yew::suspense::*;
+use yew_icons::{Icon as YewIcon, IconId};
 
 #[derive(Properties, PartialEq)]
 pub struct NavbarProps {
@@ -46,5 +53,102 @@ pub fn NavbarHeading(props: &NavbarHeadingProps) -> Html {
 pub fn NavbarDivider() -> Html {
     html! {
         <div class="bp3-navbar-divider"></div>
+    }
+}
+
+#[function_component]
+pub fn SimpleNavbar() -> Html {
+    html! {
+        <Navbar>
+            <NavbarGroup>
+                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
+                <NavbarDivider />
+            </NavbarGroup>
+            <div class="bp3-navbar-group bp3-align-right">
+                <div class="bp3-navbar-heading bp3-fill">
+                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
+                </div>
+            </div>
+        </Navbar>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct ComplexNavbarProps {
+    pub name: String,
+    pub left: String,
+    pub right: String,
+    #[prop_or_default]
+    pub versions: Vec<String>,
+    #[prop_or_default]
+    pub onchange: Callback<(String, String)>,
+}
+
+#[function_component]
+pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
+    let disabled = vec![props.left.clone(), props.right.clone()];
+    let versions = match props.versions.is_empty() {
+        true => &disabled,
+        false => &props.versions,
+    };
+
+    let versions: IArray<(IString, AttrValue)> = versions
+        .iter()
+        .map(|v| IString::from(v.clone()))
+        .map(|val| (val.clone(), val.clone()))
+        .collect();
+
+    html! {
+        <Navbar>
+            <NavbarGroup>
+                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
+                <NavbarDivider />
+                <NavbarHeading>
+                    { &props.name }
+                </NavbarHeading>
+                <NavbarHeading>
+                    <a href={format!("https://crates.io/crates/{}", props.name)}>
+                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { "crates.io" }
+                    </a>
+                </NavbarHeading>
+                <NavbarHeading>
+                    <HtmlSelect<IString>
+                        minimal={true}
+                        options={versions.clone()}
+                        disabled={props.versions.is_empty()}
+                        value={Some(props.left.clone().into()) as Option<IString>}
+                        onchange={
+                            let onchange = props.onchange.clone();
+                            let right = props.right.clone();
+                            move |left: IString| {
+                                onchange.emit((left.to_string(), right.clone()))
+                            }
+                        }
+                    />
+                </NavbarHeading>
+                <NavbarHeading>{ "diff" }</NavbarHeading>
+                <NavbarHeading>
+                    <HtmlSelect<IString>
+                        minimal={true}
+                        options={versions.clone()}
+                        disabled={props.versions.is_empty()}
+                        value={Some(props.right.clone().into()) as Option<IString>}
+                        onchange={
+                            let onchange = props.onchange.clone();
+                            let left = props.left.clone();
+                            move |right: IString| {
+                                onchange.emit((left.clone(), right.to_string()))
+                            }
+                        }
+                    />
+                </NavbarHeading>
+                <NavbarDivider />
+            </NavbarGroup>
+            <div class="bp3-navbar-group bp3-align-right">
+                <div class="bp3-navbar-heading bp3-fill">
+                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
+                </div>
+            </div>
+        </Navbar>
     }
 }

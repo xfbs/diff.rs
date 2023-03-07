@@ -1,3 +1,4 @@
+use super::*;
 use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
 use crate::router::*;
 use similar::{ChangeTag, TextDiff};
@@ -5,7 +6,6 @@ use std::sync::Arc;
 use yew::prelude::*;
 use yew::suspense::*;
 use yew_icons::{Icon as YewIcon, IconId};
-use super::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {
@@ -37,12 +37,14 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         let left = props.left.version.num.clone();
         let right = props.right.version.num.clone();
         let navigator = navigator.clone();
-        move |path: String| navigator.push(&Route::File {
-            name: name.clone(),
-            left: left.clone(),
-            right: right.clone(),
-            path,
-        })
+        move |path: String| {
+            navigator.push(&Route::File {
+                name: name.clone(),
+                left: left.clone(),
+                right: right.clone(),
+                path,
+            })
+        }
     };
     html! {
         <>
@@ -65,7 +67,8 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                 }
             }
         />
-        <div style="margin-top: 50px; display: flex;">
+        <Content>
+        <div style="display: flex;">
             <div style="width: 300px;">
                 <FileTree
                     info={props.info.clone()}
@@ -79,6 +82,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                 <DiffView {left} {right} path={props.path.clone()} />
             </div>
         </div>
+        </Content>
         </>
     }
 }
