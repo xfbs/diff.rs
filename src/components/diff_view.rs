@@ -77,7 +77,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                     {onselect}
                 />
             </div>
-            <div style="width: 50%;">
+            <div style="width: 50%; padding-left: 8px;">
                 <DiffView {left} {right} path={props.path.clone()} />
             </div>
         </div>
