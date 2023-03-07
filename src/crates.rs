@@ -105,35 +105,45 @@ impl VersionInfo {
         let response = reqwest::get(url.as_str()).await?;
         if response.status().is_success() {
             let bytes = response.bytes().await?;
-            Ok(CrateSource::parse_compressed(&bytes[..])?)
+            let mut source = CrateSource::new(self.clone());
+            source.parse_compressed(&bytes[..])?;
+            Ok(source)
         } else {
             Err(anyhow!("Error response: {}", response.status()))
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateSource {
     pub files: BTreeMap<String, String>,
+    pub version: VersionInfo,
 }
 
 impl CrateSource {
-    pub fn parse_compressed(data: &[u8]) -> Result<Self> {
-        let mut decoder = GzDecoder::new(data);
-        Self::parse_archive(&mut decoder)
+    pub fn new(version: VersionInfo) -> Self {
+        CrateSource {
+            version,
+            files: Default::default(),
+        }
     }
 
-    pub fn parse_archive(data: &mut dyn Read) -> Result<Self> {
+    pub fn parse_compressed(&mut self, data: &[u8]) -> Result<()> {
+        let mut decoder = GzDecoder::new(data);
+        self.parse_archive(&mut decoder)?;
+        Ok(())
+    }
+
+    pub fn parse_archive(&mut self, data: &mut dyn Read) -> Result<()> {
         let mut archive = Archive::new(data);
-        let mut source = Self::default();
         for entry in archive.entries()? {
             let mut entry = entry?;
             let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
             let path: String = path.chars().skip_while(|c| *c != '/').skip(1).collect();
             let data = std::io::read_to_string(&mut entry)?;
-            source.add(&path, data);
+            self.add(&path, data);
         }
-        Ok(source)
+        Ok(())
     }
 
     pub fn add(&mut self, path: &str, data: String) {
