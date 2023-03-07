@@ -3,11 +3,9 @@ use crate::crates::{CrateInfo, CrateResponse, CrateSource};
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use log::*;
-
 use std::sync::Arc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-
 use yew_icons::{Icon as YewIcon, IconId};
 use yewprint::*;
 

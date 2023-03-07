@@ -1,11 +1,4 @@
-use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
-use crate::router::*;
-use implicit_clone::unsync::{IArray, IString};
-use similar::{ChangeTag, TextDiff};
-use std::sync::Arc;
 use yew::prelude::*;
-use yew::suspense::*;
-use yew_icons::{Icon as YewIcon, IconId};
 
 #[derive(Properties, PartialEq)]
 pub struct CenterProps {

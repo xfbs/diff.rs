@@ -143,7 +143,7 @@ pub fn clear_selected<T>(tree: &mut TreeData<T>) -> Result<()> {
         .traverse_post_order_ids(tree.root_node_id().unwrap())?
         .collect();
     for node_id in &node_ids {
-        let mut node = tree.get_mut(node_id).unwrap();
+        let node = tree.get_mut(node_id).unwrap();
         node.data_mut().is_selected = false;
     }
     Ok(())
@@ -160,13 +160,13 @@ pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
             .find(|i| tree.get(i).unwrap().data().data == segment.clone().into_inner())
             .unwrap()
             .clone();
-        let mut node = tree.get_mut(&current).unwrap();
+        let node = tree.get_mut(&current).unwrap();
         match segment {
-            Position::First(s) | Position::Middle(s) => {
+            Position::First(_s) | Position::Middle(_s) => {
                 node.data_mut().is_expanded = true;
                 node.data_mut().icon = Icon::FolderOpen;
             }
-            Position::Last(s) | Position::Only(s) => {
+            Position::Last(_s) | Position::Only(_s) => {
                 node.data_mut().is_selected = true;
             }
         }
