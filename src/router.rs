@@ -34,16 +34,21 @@ fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
         Route::Crate { name } => html! {
-            <DiffViewer {name} />
+            <Diff {name} />
         },
         Route::Diff { name, left, right } => html! {
-            <DiffViewer {name} {left} {right} />
+            <Diff {name} {left} {right} />
         },
-        Route::File { name, left, right, path } => html! {
-            <DiffViewer {name} {left} {right} {path} />
+        Route::File {
+            name,
+            left,
+            right,
+            path,
+        } => html! {
+            <Diff {name} {left} {right} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
-        _ => html! { <Crate name={"wireguard_keys"} /> },
+        Route::Search { krate } => html! { <p>{"Search"}</p> },
     }
 }
 

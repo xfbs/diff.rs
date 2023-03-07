@@ -1,7 +1,9 @@
-use crate::crates::{CrateInfo, CrateResponse, CrateSource};
+use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use log::*;
+use similar::{ChangeTag, TextDiff};
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -11,6 +13,8 @@ use yewprint::*;
 
 mod navigation;
 use navigation::*;
+
+mod legacy;
 
 #[derive(Properties, PartialEq)]
 pub struct CenterProps {
@@ -115,297 +119,8 @@ pub struct CrateProps {
     pub name: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Default)]
-pub enum CrateState {
-    #[default]
-    Initial,
-    Loading,
-    Version(String, String),
-    Error(String),
-    NotExists,
-}
-
-#[function_component]
-pub fn Crate(props: &CrateProps) -> Html {
-    let state = use_state(|| CrateState::Initial);
-
-    // fetch crate info
-    if *state == CrateState::Initial {
-        let state = state.clone();
-        let props = props.clone();
-        spawn_local(async move {
-            state.set(CrateState::Loading);
-            match CrateInfo::fetch_cached(&props.name).await {
-                Ok(info) => state.set(CrateState::Version(
-                    info.krate.max_version.clone(),
-                    info.krate.max_stable_version.clone(),
-                )),
-                Err(error) => state.set(CrateState::Error(error.to_string())),
-            }
-        });
-    }
-
-    html! {
-        <>
-        <Navbar>
-            <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
-                <NavbarDivider />
-                <NavbarHeading>
-                    <a href={format!("https://crates.io/crates/{}", props.name)}>
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }
-                    </a>
-                </NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString> minimal={true} disabled={true} options={[
-                        ("left".into(), "left".into()),
-                    ].into_iter().collect::<IArray<_>>()
-                    } />
-                </NavbarHeading>
-                <NavbarHeading>{ "diff" }</NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString> minimal={true} disabled={true} options={[
-                        ("right".into(), "right".into()),
-                    ].into_iter().collect::<IArray<_>>()
-                    } />
-                </NavbarHeading>
-                <NavbarDivider />
-            </NavbarGroup>
-            <div class="bp3-navbar-group bp3-align-right">
-                <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
-                </div>
-            </div>
-        </Navbar>
-        <div style="height: 50px;"></div>
-        <Center>
-            {
-                match &*state {
-                    CrateState::Initial => html!{
-                        <Loading title={"Loading crate"} status={""} />
-                    },
-                    CrateState::Loading => html! {
-                        <Loading title={"Loading crate"} status={"Loading crate information"} />
-                    },
-                    CrateState::NotExists => html! {
-                        <Error title={"Loading crate"} status={"The crate does not exist"} />
-                    },
-                    CrateState::Error(error) => html!{
-                        <Error title={"Loading crate"} status={error.to_string()} />
-                    },
-                    CrateState::Version(left, right) => html!{
-                        <Redirect<Route> to={Route::Diff {
-                            name: props.name.clone(),
-                            left: left.clone(),
-                            right: right.clone(),
-                        }} />
-                    },
-                }
-            }
-        </Center>
-        </>
-    }
-}
-
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffProps {
-    pub name: String,
-    pub left: String,
-    pub right: String,
-    pub path: Option<String>,
-}
-
-// instead of using state here, use the use_future thingy.
-#[derive(Clone, PartialEq, Eq, Default)]
-pub enum DiffState {
-    #[default]
-    Loading,
-    CrateInfo(Arc<CrateResponse>),
-    CrateSource(Arc<CrateResponse>, Arc<CrateSource>, Arc<CrateSource>),
-    Error(String),
-}
-
-#[function_component]
-pub fn Diff(props: &DiffProps) -> Html {
-    info!("Instantiating diff");
-    let state = use_state(|| DiffState::Loading);
-    let navigator = use_navigator().unwrap();
-
-    // load crate versions
-    if *state == DiffState::Loading {
-        let state = state.clone();
-        let props = props.clone();
-        spawn_local(async move {
-            match CrateInfo::fetch_cached(&props.name).await {
-                Ok(info) => {
-                    if !info.versions.iter().any(|v| v.num == props.left) {
-                        state.set(DiffState::Error(format!(
-                            "Version {} not found",
-                            props.left
-                        )));
-                    } else if !info.versions.iter().any(|v| v.num == props.right) {
-                        state.set(DiffState::Error(format!(
-                            "Version {} not found",
-                            props.right
-                        )));
-                    } else {
-                        state.set(DiffState::CrateInfo(info));
-                    }
-                }
-                Err(error) => state.set(DiffState::Error(error.to_string())),
-            }
-        });
-    }
-
-    let (have_versions, versions): (bool, IArray<(IString, AttrValue)>) = match &*state {
-        DiffState::CrateInfo(info) | DiffState::CrateSource(info, _, _) => (
-            true,
-            info.versions
-                .iter()
-                .map(|version| (version.num.clone().into(), version.num.clone().into()))
-                .collect(),
-        ),
-        _ => (
-            false,
-            [&props.left, &props.right]
-                .iter()
-                .map(|version| (version.to_string().into(), version.to_string().into()))
-                .collect(),
-        ),
-    };
-
-    if let DiffState::CrateInfo(crate_info) = &*state {
-        let left = crate_info
-            .versions
-            .iter()
-            .find(|v| v.num == props.left)
-            .unwrap()
-            .clone();
-        let right = crate_info
-            .versions
-            .iter()
-            .find(|v| v.num == props.right)
-            .unwrap()
-            .clone();
-        let state = state.clone();
-        let props = props.clone();
-        let crate_info = crate_info.clone();
-        spawn_local(async move {
-            let left = match left.fetch_cached().await {
-                Ok(source) => source,
-                Err(error) => {
-                    state.set(DiffState::Error(error.to_string()));
-                    return;
-                }
-            };
-            let right = match right.fetch_cached().await {
-                Ok(source) => source,
-                Err(error) => {
-                    state.set(DiffState::Error(error.to_string()));
-                    return;
-                }
-            };
-            state.set(DiffState::CrateSource(crate_info, left, right));
-        });
-    }
-
-    html! {
-        <>
-        <Navbar>
-            <NavbarGroup>
-                <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
-                <NavbarDivider />
-                <NavbarHeading>
-                    <a href={format!("https://crates.io/crates/{}", props.name)}>
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} /> { &props.name }
-                    </a>
-                </NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString>
-                        minimal={true}
-                        options={versions.clone()}
-                        disabled={!have_versions}
-                        value={Some(props.left.clone().into()) as Option<IString>}
-                        onchange={
-                            let navigator = navigator.clone();
-                            let props = props.clone();
-                            Callback::from(move |version: IString| {
-                                navigator.push(&Route::Diff {
-                                    name: props.name.clone(),
-                                    left: version.to_string(),
-                                    right: props.right.clone(),
-                                });
-                            })
-                        }
-                    />
-                </NavbarHeading>
-                <NavbarHeading>{ "diff" }</NavbarHeading>
-                <NavbarHeading>
-                    <HtmlSelect<IString>
-                        minimal={true}
-                        options={versions.clone()}
-                        disabled={!have_versions}
-                        value={Some(props.right.clone().into()) as Option<IString>}
-                        onchange={
-                            let navigator = navigator.clone();
-                            let props = props.clone();
-                            Callback::from(move |version: IString| {
-                                navigator.push(&Route::Diff {
-                                    name: props.name.clone(),
-                                    right: version.to_string(),
-                                    left: props.left.clone(),
-                                });
-                            })
-                        }
-                    />
-                </NavbarHeading>
-                <NavbarDivider />
-            </NavbarGroup>
-            <div class="bp3-navbar-group bp3-align-right">
-                <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
-                </div>
-            </div>
-        </Navbar>
-        <div style="height: 50px;"></div>
-        {
-            match &*state {
-                DiffState::Loading => html! {
-                    <Center>
-                    <Loading title={"Loading crate"} status={"Loading crate version information"} />
-                    </Center>
-                },
-                DiffState::Error(error) => html!{
-                    <Center>
-                    <Error title={"Error loading crate"} status={error.clone()} />
-                    </Center>
-                },
-                DiffState::CrateInfo(_) => html!{
-                    <Center>
-                    <Loading title={"Loading crate"} status={"Loading crate source"} />
-                    </Center>
-                },
-                DiffState::CrateSource(_, left, _) if props.path.is_none() => html!{
-                    <Redirect<Route> to={Route::File {
-                        name: props.name.clone(),
-                        left: props.left.clone(),
-                        right: props.right.clone(),
-                        path: "Cargo.toml".into(),
-                    }} />
-                },
-                DiffState::CrateSource(_, left, _) => html!{
-                    <p> {format!("{:?}", left)} </p>
-                },
-            }
-        }
-        </>
-    }
-}
-
-// Diff -> CrateResolver -> Viewer
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct DiffViewerProps {
     pub name: String,
     pub left: Option<String>,
     pub right: Option<String>,
@@ -413,8 +128,12 @@ pub struct DiffViewerProps {
 }
 
 #[function_component]
-pub fn DiffViewer(props: &DiffViewerProps) -> Html {
-    let fallback = html! { <p>{"Loading"}</p> };
+pub fn Diff(props: &DiffProps) -> Html {
+    let fallback = html! {
+        <Center>
+            <Loading title={"Loading crate"} status={"Loading crate metadata"} />
+        </Center>
+    };
     html! {
         <Suspense {fallback}>
             <CrateFetcher
@@ -428,14 +147,17 @@ pub fn DiffViewer(props: &DiffViewerProps) -> Html {
 }
 
 #[function_component]
-pub fn CrateFetcher(props: &DiffViewerProps) -> HtmlResult {
-    let info = use_future_with_deps(|name| async move {CrateInfo::fetch_cached(&name).await }, props.name.clone())?;
+pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
+    let info = use_future_with_deps(
+        |name| async move { CrateInfo::fetch_cached(&name).await },
+        props.name.clone(),
+    )?;
+
     match &*info {
-        Ok(info) =>
-            Ok(html! {
-                <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
-            }),
-        Err(error) => todo!()
+        Ok(info) => Ok(html! {
+            <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
+        }),
+        Err(error) => todo!(),
     }
 }
 
@@ -448,8 +170,192 @@ pub struct VersionResolverProps {
 }
 
 #[function_component]
-pub fn VersionResolver(props: &VersionResolverProps) -> HtmlResult {
+pub fn VersionResolver(props: &VersionResolverProps) -> Html {
+    // redirect to latest versions if none specified
+    let (left, right) = match (&props.left, &props.right) {
+        (Some(left), Some(right)) => (left, right),
+        _ => {
+            let left = props
+                .left
+                .as_ref()
+                .unwrap_or(&props.info.krate.max_stable_version);
+            let right = props
+                .right
+                .as_ref()
+                .unwrap_or(&props.info.krate.max_version);
+            return html! {
+                <Redirect<Route> to={Route::Diff {
+                    name: props.info.krate.id.clone(),
+                    left: left.into(),
+                    right: right.into(),
+                }} />
+            };
+        }
+    };
+
+    // find krate version info
+    let left = props.info.versions.iter().find(|v| &v.num == left);
+    let right = props.info.versions.iter().find(|v| &v.num == right);
+
+    match (left, right) {
+        (Some(left), Some(right)) => html! {
+            <SourceFetcher info={props.info.clone()} left={left.clone()} right={right.clone()} path={props.path.clone()} />
+        },
+        _ => html! {
+            <p>{format!("Error: Version not found")}</p>
+        },
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct SourceFetcherProps {
+    pub info: Arc<CrateResponse>,
+    pub left: VersionInfo,
+    pub right: VersionInfo,
+    pub path: Option<String>,
+}
+
+#[function_component]
+pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
+    let fallback = html! {
+        <Center>
+            <Loading title={"Loading crate"} status={"Loading crate source"} />
+        </Center>
+    };
+    html! {
+        <Suspense {fallback}>
+            <SourceFetcherInner
+                info={props.info.clone()}
+                left={props.left.clone()}
+                right={props.right.clone()}
+                path={props.path.clone()}
+            />
+        </Suspense>
+    }
+}
+
+#[function_component]
+pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
+    // fetch left version source
+    let left = use_future_with_deps(
+        |version| async move { version.fetch_cached().await },
+        props.left.clone(),
+    )?;
+
+    // fetch right version source
+    let right = use_future_with_deps(
+        |version| async move { version.fetch_cached().await },
+        props.right.clone(),
+    )?;
+
+    let (left, right) = match (&*left, &*right) {
+        (Ok(left), Ok(right)) => (left, right),
+        (Err(error), _) | (_, Err(error)) => {
+            return Ok(html! {<p>{format!("Error: {error}")}</p> })
+        }
+    };
+
+    let path = match &props.path {
+        None => {
+            return Ok(html! {
+                <Redirect<Route> to={Route::File {
+                    name: props.info.krate.id.clone(),
+                    left: props.left.num.clone(),
+                    right: props.right.num.clone(),
+                    path: "Cargo.toml".into(),
+                }} />
+            })
+        }
+        Some(path) => path.clone(),
+    };
+
     Ok(html! {
-        <p>{format!("hello")}</p>
+        <SourceView
+            info={props.info.clone()}
+            {left}
+            {right}
+            {path}
+        />
     })
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct SourceViewProps {
+    pub info: Arc<CrateResponse>,
+    pub left: Arc<CrateSource>,
+    pub right: Arc<CrateSource>,
+    pub path: String,
+}
+
+#[function_component]
+pub fn SourceView(props: &SourceViewProps) -> Html {
+    let left = props
+        .left
+        .files
+        .get(&props.path)
+        .map(|s| s.as_str())
+        .unwrap_or("")
+        .to_string();
+    let right = props
+        .right
+        .files
+        .get(&props.path)
+        .map(|s| s.as_str())
+        .unwrap_or("")
+        .to_string();
+    html! {
+        <>
+        <p>{"Hey"}</p>
+        <FileView info={props.info.clone()} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
+        <DiffView {left} {right} path={props.path.clone()} />
+        </>
+    }
+}
+
+#[function_component]
+pub fn FileView(props: &SourceViewProps) -> Html {
+    let mut files = BTreeSet::default();
+    for (path, _) in props.left.files.iter() {
+        files.insert(path.clone());
+    }
+    for (path, _) in props.right.files.iter() {
+        files.insert(path.clone());
+    }
+    html! {
+        <>
+        <p>{"Files"}</p>
+        <ul>
+        {
+            files.iter().map(|file| html! { <li>{&file}</li> }).collect::<Html>()
+        }
+        </ul>
+        </>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct DiffViewProps {
+    pub path: String,
+    pub left: String,
+    pub right: String,
+}
+
+#[function_component]
+pub fn DiffView(props: &DiffViewProps) -> Html {
+    let diff = TextDiff::from_lines(&props.left, &props.right);
+    html! {
+        <>
+        <p>{"Diff"}</p>
+        {
+            diff.iter_all_changes().map(|change| {
+                let sign = match change.tag() {
+                    ChangeTag::Delete => "-",
+                    ChangeTag::Insert => "+",
+                    ChangeTag::Equal => " ",
+                };
+                html!{ <p>{ format!("{sign}{change}") } </p> }
+            }).collect::<Html>()
+        }
+        </>
+    }
 }

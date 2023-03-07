@@ -22,6 +22,7 @@ pub struct CrateResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateInfo {
+    pub id: String,
     pub categories: BTreeSet<String>,
     pub description: String,
     pub downloads: u64,
