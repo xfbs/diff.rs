@@ -60,9 +60,14 @@ pub struct DiffProps {
 #[function_component]
 pub fn Diff(props: &DiffProps) -> Html {
     let fallback = html! {
-        <Center>
-            <Loading title={"Loading crate"} status={"Loading crate metadata"} />
-        </Center>
+        <>
+            <SimpleNavbar />
+            <Content>
+                <Center>
+                    <Loading title={"Loading crate"} status={"Loading crate metadata"} />
+                </Center>
+            </Content>
+        </>
     };
     html! {
         <Suspense {fallback}>
@@ -87,7 +92,9 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
         Ok(info) => Ok(html! {
             <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
         }),
-        Err(_error) => todo!(),
+        Err(error) => Ok(html! {
+            <Error title={"Loading crate"} status={format!("Error: {error}")} />
+        })
     }
 }
 
@@ -102,7 +109,7 @@ pub struct VersionResolverProps {
 #[function_component]
 pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     // redirect to latest versions if none specified
-    let (left, right) = match (&props.left, &props.right) {
+    let (left_str, right_str) = match (&props.left, &props.right) {
         (Some(left), Some(right)) => (left, right),
         _ => {
             let left = props
@@ -124,15 +131,32 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     };
 
     // find krate version info
-    let left = props.info.versions.iter().find(|v| &v.num == left);
-    let right = props.info.versions.iter().find(|v| &v.num == right);
+    let left = props.info.versions.iter().find(|v| &v.num == left_str);
+    let right = props.info.versions.iter().find(|v| &v.num == right_str);
 
     match (left, right) {
         (Some(left), Some(right)) => html! {
             <SourceFetcher info={props.info.clone()} left={left.clone()} right={right.clone()} path={props.path.clone()} />
         },
-        _ => html! {
-            <p>{format!("Error: Version not found")}</p>
+        (None, _) => html! {
+            <>
+            <SimpleNavbar />
+            <Content>
+            <Center>
+            <Error title={"Resolving version"} status={format!("Error: version {left_str} not found")} />
+            </Center>
+            </Content>
+            </>
+        },
+        (_, None) => html! {
+            <>
+            <SimpleNavbar />
+            <Content>
+            <Center>
+            <Error title={"Resolving version"} status={format!("Error: version {right_str} not found")} />
+            </Center>
+            </Content>
+            </>
         },
     }
 }
