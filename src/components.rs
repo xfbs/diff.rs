@@ -9,7 +9,6 @@ mod navigation;
 use navigation::*;
 mod diff_view;
 mod file_tree;
-mod legacy;
 use diff_view::*;
 use file_tree::*;
 mod layout;
@@ -94,7 +93,7 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
         }),
         Err(error) => Ok(html! {
             <Error title={"Loading crate"} status={format!("Error: {error}")} />
-        })
+        }),
     }
 }
 
