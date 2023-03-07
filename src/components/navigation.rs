@@ -60,7 +60,7 @@ pub fn SimpleNavbar() -> Html {
             </NavbarGroup>
             <div class="bp3-navbar-group bp3-align-right">
                 <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
+                    <Search />
                 </div>
             </div>
         </Navbar>
@@ -140,7 +140,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
             </NavbarGroup>
             <div class="bp3-navbar-group bp3-align-right">
                 <div class="bp3-navbar-heading bp3-fill">
-                    <InputGroup placeholder="Search crates..." fill={true} left_icon={Icon::Search} />
+                    <Search />
                 </div>
             </div>
         </Navbar>

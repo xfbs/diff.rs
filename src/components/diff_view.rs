@@ -2,9 +2,6 @@ use super::*;
 use crate::crates::{CrateResponse, CrateSource};
 use similar::{ChangeTag, TextDiff};
 use std::sync::Arc;
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style, ThemeSet};
-use syntect::parsing::SyntaxSet;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {
@@ -95,8 +92,6 @@ pub struct DiffViewProps {
 
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
-    let ps = use_memo(|_| SyntaxSet::load_defaults_newlines(), ());
-    let ts = use_memo(|_| ThemeSet::load_defaults(), ());
     let diff = TextDiff::from_lines(&props.left, &props.right);
     html! {
         <>

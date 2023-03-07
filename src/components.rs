@@ -15,6 +15,8 @@ mod layout;
 use layout::*;
 mod non_ideal;
 use non_ideal::*;
+mod search;
+use search::*;
 
 #[function_component]
 pub fn Home() -> Html {
@@ -22,9 +24,13 @@ pub fn Home() -> Html {
         <>
             <SimpleNavbar />
             <Content>
-                <div class="content">
-                    <h1>{ "diff.rs" }</h1>
-                    <p>{ "View the differences between crates." }</p>
+                <div style="width: 700px; margin: auto; padding-top: 20px;">
+                    <span>
+                        <h1>{ "diff.rs" }</h1>
+                    </span>
+                    <p>{ "View the differences between Rust crate versions. Enter a crate name such as "}<a href="/serde/">{"serde"}</a>{" in the search field in the top-right corner to get started." }</p>
+                    <p>{ "This is an experimental WASM-based web application written in Rust with "}<a href="https://docs.rs/yew">{"Yew"}</a>{" that uses the "}<a href="https://crates.io/">{"crates.io"}</a>{" API to fetch crate metadata, fetch and parse the crate source, unpack it in-memory and render a diff in the browser." }</p>
+                    <p>{"Source code for this application is available at "}<a href="https://github.com/xfbs/diff.rs">{"github.com/xfbs/diff.rs"}</a>{"."}</p>
                 </div>
             </Content>
         </>
@@ -92,7 +98,14 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
             <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
         }),
         Err(error) => Ok(html! {
-            <Error title={"Loading crate"} status={format!("Error: {error}")} />
+            <>
+                <SimpleNavbar />
+                <Content>
+                    <Center>
+                        <Error title={"Loading crate"} status={format!("Error: {error}")} />
+                    </Center>
+                </Content>
+            </>
         }),
     }
 }
