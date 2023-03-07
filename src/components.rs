@@ -195,7 +195,7 @@ pub fn Crate(props: &CrateProps) -> Html {
                     },
                     CrateState::Version(left, right) => html!{
                         <Redirect<Route> to={Route::Diff {
-                            krate: props.name.clone(),
+                            name: props.name.clone(),
                             left: left.clone(),
                             right: right.clone(),
                         }} />
@@ -331,7 +331,7 @@ pub fn Diff(props: &DiffProps) -> Html {
                             let props = props.clone();
                             Callback::from(move |version: IString| {
                                 navigator.push(&Route::Diff {
-                                    krate: props.name.clone(),
+                                    name: props.name.clone(),
                                     left: version.to_string(),
                                     right: props.right.clone(),
                                 });
@@ -351,7 +351,7 @@ pub fn Diff(props: &DiffProps) -> Html {
                             let props = props.clone();
                             Callback::from(move |version: IString| {
                                 navigator.push(&Route::Diff {
-                                    krate: props.name.clone(),
+                                    name: props.name.clone(),
                                     right: version.to_string(),
                                     left: props.left.clone(),
                                 });
@@ -387,7 +387,7 @@ pub fn Diff(props: &DiffProps) -> Html {
                 },
                 DiffState::CrateSource(_, left, _) if props.path.is_none() => html!{
                     <Redirect<Route> to={Route::File {
-                        krate: props.name.clone(),
+                        name: props.name.clone(),
                         left: props.left.clone(),
                         right: props.right.clone(),
                         path: "Cargo.toml".into(),
@@ -402,6 +402,8 @@ pub fn Diff(props: &DiffProps) -> Html {
     }
 }
 
+// Diff -> CrateResolver -> Viewer
+
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffViewerProps {
     pub name: String,
@@ -412,8 +414,42 @@ pub struct DiffViewerProps {
 
 #[function_component]
 pub fn DiffViewer(props: &DiffViewerProps) -> Html {
-    let crate_info = use_future_with_deps(|name| async move {CrateInfo::fetch_cached(&name).await }, props.name.clone());
+    let fallback = html! { <p>{"Loading"}</p> };
     html! {
-        <p>{"test"}</p>
+        <Suspense {fallback}>
+            <CrateFetcher
+                name={props.name.clone()}
+                left={props.left.clone()}
+                right={props.right.clone()}
+                path={props.path.clone()}
+            />
+        </Suspense>
     }
+}
+
+#[function_component]
+pub fn CrateFetcher(props: &DiffViewerProps) -> HtmlResult {
+    let info = use_future_with_deps(|name| async move {CrateInfo::fetch_cached(&name).await }, props.name.clone())?;
+    match &*info {
+        Ok(info) =>
+            Ok(html! {
+                <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
+            }),
+        Err(error) => todo!()
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct VersionResolverProps {
+    pub info: Arc<CrateResponse>,
+    pub left: Option<String>,
+    pub right: Option<String>,
+    pub path: Option<String>,
+}
+
+#[function_component]
+pub fn VersionResolver(props: &VersionResolverProps) -> HtmlResult {
+    Ok(html! {
+        <p>{format!("hello")}</p>
+    })
 }

@@ -10,17 +10,17 @@ pub enum Route {
     Home,
     #[at("/search/:krate")]
     Search { krate: String },
-    #[at("/:krate/")]
-    Crate { krate: String },
-    #[at("/:krate/:left/:right")]
+    #[at("/:name/")]
+    Crate { name: String },
+    #[at("/:name/:left/:right")]
     Diff {
-        krate: String,
+        name: String,
         left: String,
         right: String,
     },
-    #[at("/:krate/:left/:right/*path")]
+    #[at("/:name/:left/:right/*path")]
     File {
-        krate: String,
+        name: String,
         left: String,
         right: String,
         path: String,
@@ -33,27 +33,14 @@ pub enum Route {
 fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
-        Route::Crate { krate } => html! { <Crate name={krate} /> },
-        Route::Diff { krate, left, right } => html! {
-            <Diff
-                name={krate}
-                left={left}
-                right={right}
-                path={None as Option<String>}
-            />
+        Route::Crate { name } => html! {
+            <DiffViewer {name} />
         },
-        Route::File {
-            krate,
-            left,
-            right,
-            path,
-        } => html! {
-            <Diff
-                name={krate}
-                left={left}
-                right={right}
-                path={Some(path)}
-            />
+        Route::Diff { name, left, right } => html! {
+            <DiffViewer {name} {left} {right} />
+        },
+        Route::File { name, left, right, path } => html! {
+            <DiffViewer {name} {left} {right} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
         _ => html! { <Crate name={"wireguard_keys"} /> },
