@@ -1,7 +1,4 @@
-use crate::router::*;
-use implicit_clone::unsync::{IArray, IString};
 use yew::prelude::*;
-use yewprint::*;
 
 #[derive(Properties, PartialEq)]
 pub struct NavbarProps {

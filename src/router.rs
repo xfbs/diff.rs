@@ -1,5 +1,5 @@
 use crate::components::*;
-use implicit_clone::unsync::{IArray, IString};
+
 use yew::prelude::*;
 use yew_router::prelude::*;
 pub use yew_router::prelude::{use_navigator, Link, Redirect};
@@ -48,7 +48,7 @@ fn switch(route: Route) -> Html {
             <Diff {name} {left} {right} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
-        Route::Search { krate } => html! { <p>{"Search"}</p> },
+        Route::Search { krate: _ } => html! { <p>{"Search"}</p> },
     }
 }
 

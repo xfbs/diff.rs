@@ -1,23 +1,17 @@
 use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
 use crate::router::*;
-use implicit_clone::unsync::{IArray, IString};
-use itertools::{Itertools, Position};
-use log::*;
 use similar::{ChangeTag, TextDiff};
-use std::collections::BTreeSet;
 use std::sync::Arc;
-use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew::suspense::*;
 use yew_icons::{Icon as YewIcon, IconId};
-use yewprint::id_tree::{InsertBehavior, Node, NodeId, TreeBuilder};
 use yewprint::*;
-
 mod navigation;
 use navigation::*;
-
-mod legacy;
+mod diff_view;
 mod file_tree;
+mod legacy;
+use diff_view::*;
 use file_tree::*;
 
 #[derive(Properties, PartialEq)]
@@ -161,7 +155,7 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
         Ok(info) => Ok(html! {
             <VersionResolver {info} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
         }),
-        Err(error) => todo!(),
+        Err(_error) => todo!(),
     }
 }
 
@@ -281,64 +275,4 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
             {path}
         />
     })
-}
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct SourceViewProps {
-    pub info: Arc<CrateResponse>,
-    pub left: Arc<CrateSource>,
-    pub right: Arc<CrateSource>,
-    pub path: String,
-}
-
-#[function_component]
-pub fn SourceView(props: &SourceViewProps) -> Html {
-    let left = props
-        .left
-        .files
-        .get(&props.path)
-        .map(|s| s.as_str())
-        .unwrap_or("")
-        .to_string();
-    let right = props
-        .right
-        .files
-        .get(&props.path)
-        .map(|s| s.as_str())
-        .unwrap_or("")
-        .to_string();
-    html! {
-        <>
-        <p>{"Hey"}</p>
-        <FileView info={props.info.clone()} left={props.left.clone()} right={props.right.clone()} path={props.path.clone()} />
-        <DiffView {left} {right} path={props.path.clone()} />
-        </>
-    }
-}
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct DiffViewProps {
-    pub path: String,
-    pub left: String,
-    pub right: String,
-}
-
-#[function_component]
-pub fn DiffView(props: &DiffViewProps) -> Html {
-    let diff = TextDiff::from_lines(&props.left, &props.right);
-    html! {
-        <>
-        <p>{"Diff"}</p>
-        {
-            diff.iter_all_changes().map(|change| {
-                let sign = match change.tag() {
-                    ChangeTag::Delete => "-",
-                    ChangeTag::Insert => "+",
-                    ChangeTag::Equal => " ",
-                };
-                html!{ <p>{ format!("{sign}{change}") } </p> }
-            }).collect::<Html>()
-        }
-        </>
-    }
 }

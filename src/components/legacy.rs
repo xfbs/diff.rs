@@ -1,14 +1,13 @@
 use crate::components::navigation::*;
-use crate::crates::{CrateInfo, CrateResponse, CrateSource, VersionInfo};
+use crate::crates::{CrateInfo, CrateResponse, CrateSource};
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use log::*;
-use similar::{ChangeTag, TextDiff};
-use std::collections::BTreeSet;
+
 use std::sync::Arc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use yew::suspense::*;
+
 use yew_icons::{Icon as YewIcon, IconId};
 use yewprint::*;
 
@@ -288,7 +287,7 @@ pub fn Diff(props: &DiffProps) -> Html {
             .unwrap()
             .clone();
         let state = state.clone();
-        let props = props.clone();
+        let _props = props.clone();
         let crate_info = crate_info.clone();
         spawn_local(async move {
             let left = match left.fetch_cached().await {
@@ -385,7 +384,7 @@ pub fn Diff(props: &DiffProps) -> Html {
                     <Loading title={"Loading crate"} status={"Loading crate source"} />
                     </Center>
                 },
-                DiffState::CrateSource(_, left, _) if props.path.is_none() => html!{
+                DiffState::CrateSource(_, _left, _) if props.path.is_none() => html!{
                     <Redirect<Route> to={Route::File {
                         name: props.name.clone(),
                         left: props.left.clone(),
