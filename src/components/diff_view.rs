@@ -1,6 +1,8 @@
 use super::*;
-use crate::data::{CrateResponse, CrateSource};
+use crate::data::{CrateResponse, CrateSource, VersionDiff};
+use bytes::Bytes;
 use similar::{ChangeTag, TextDiff};
+use std::rc::Rc;
 use std::sync::Arc;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -13,20 +15,10 @@ pub struct SourceViewProps {
 
 #[function_component]
 pub fn SourceView(props: &SourceViewProps) -> Html {
-    let left = props
-        .left
-        .files
-        .get(&props.path)
-        .map(|s| s.as_str())
-        .unwrap_or("")
-        .to_string();
-    let right = props
-        .right
-        .files
-        .get(&props.path)
-        .map(|s| s.as_str())
-        .unwrap_or("")
-        .to_string();
+    let diff = use_memo(
+        |(left, right)| VersionDiff::new(left.clone(), right.clone()),
+        (props.left.clone(), props.right.clone()),
+    );
     let navigator = use_navigator().unwrap();
     let onselect = {
         let name = props.info.krate.id.clone();
@@ -65,9 +57,9 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         />
         <Content>
         <div style="display: flex;">
-            <div style="width: 300px;">
+            <div style="width: 350px;">
                 <FileTree
-                    info={props.info.clone()}
+                    diff={diff.clone()}
                     left={props.left.clone()}
                     right={props.right.clone()}
                     path={props.path.clone()}
@@ -75,7 +67,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                 />
             </div>
             <div style="width: 50%; padding-left: 8px;">
-                <DiffView {left} {right} path={props.path.clone()} />
+                <DiffView {diff} path={props.path.clone()} />
             </div>
         </div>
         </Content>
@@ -86,26 +78,24 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffViewProps {
     pub path: String,
-    pub left: String,
-    pub right: String,
+    pub diff: Rc<VersionDiff>,
 }
 
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
-    let diff = TextDiff::from_lines(&props.left, &props.right);
     html! {
         <>
         <pre>
         {
-            diff.iter_all_changes().map(|change| {
-                let (sign, color) = match change.tag() {
+            props.diff.files.get(&props.path).unwrap().iter().map(|(tag, change)| {
+                let (sign, color) = match tag {
                     ChangeTag::Delete => ("-", "red"),
                     ChangeTag::Insert => ("+", "green"),
                     ChangeTag::Equal => (" ", "default"),
                 };
                 html!{
                     <span style={format!("color: {color};")}>
-                        { format!("{sign} {change}") }
+                        { format!("{sign} {}", String::from_utf8_lossy(&change[..])) }
                     </span>
                 }
             }).collect::<Html>()

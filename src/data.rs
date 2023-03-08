@@ -1,10 +1,13 @@
 use anyhow::{anyhow, Result};
+use bytes::Bytes;
 use flate2::bufread::GzDecoder;
+use itertools::{Itertools, Position};
 use serde::{Deserialize, Serialize};
-use similar::ChangeTag;
-use std::collections::BTreeMap;
+use similar::{ChangeTag, TextDiff};
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, Read};
 use std::sync::{Arc, Mutex};
+use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;
 
@@ -97,10 +100,10 @@ impl VersionInfo {
 /// Crate source
 ///
 /// This is parsed from the gzipped tarball that crates.io serves for every crate.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateSource {
     pub version: VersionInfo,
-    pub files: BTreeMap<String, String>,
+    pub files: BTreeMap<String, Bytes>,
 }
 
 impl CrateSource {
@@ -127,29 +130,33 @@ impl CrateSource {
             let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
             let path: String = path.chars().skip_while(|c| *c != '/').skip(1).collect();
 
-            // read data and parse as string.
-            // FIXME: store data as bytes instead?
+            // read data
             let mut data = vec![];
             entry.read_to_end(&mut data)?;
-            let data = String::from_utf8_lossy(&data).into_owned();
+
+            // store data
             self.add(&path, data);
         }
         Ok(())
     }
 
     /// Add a single file to crate source.
-    pub fn add(&mut self, path: &str, data: String) {
-        self.files.insert(path.to_string(), data);
+    pub fn add<T: Into<Bytes>>(&mut self, path: &str, data: T) {
+        self.files.insert(path.to_string(), data.into());
     }
 }
 
 /// Precomputed diff data
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VersionDiff {
-    left: Arc<CrateSource>,
-    right: Arc<CrateSource>,
-    diff: BTreeMap<String, Vec<(ChangeTag, String)>>,
-    summary: BTreeMap<String, (usize, usize)>,
+    /// Left crate source that is diffed
+    pub left: Arc<CrateSource>,
+    /// Right crate source that is diffed
+    pub right: Arc<CrateSource>,
+    /// Diff of files
+    pub files: BTreeMap<String, Vec<(ChangeTag, Bytes)>>,
+    /// Summaries of files and folders
+    pub summary: BTreeMap<String, (usize, usize)>,
 }
 
 impl VersionDiff {
@@ -160,12 +167,75 @@ impl VersionDiff {
     ) -> Self {
         let left = left.into();
         let right = right.into();
+        let mut files = BTreeMap::new();
+        let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+
+        // intersection of file paths in both left and right crate sources
+        let file_paths: BTreeSet<&str> = left
+            .files
+            .keys()
+            .chain(right.files.keys())
+            .map(|s| s.as_str())
+            .collect();
+
+        // compute diffs
+        for path in file_paths.into_iter() {
+            // lookup files, default to empty bytes
+            let left = left.files.get(path).cloned().unwrap_or_default();
+            let right = right.files.get(path).cloned().unwrap_or_default();
+
+            // generate text diff
+            let diff = TextDiff::from_lines(&left[..], &right[..]);
+
+            // collect changes
+            let changes: Vec<_> = diff
+                .iter_all_changes()
+                .map(|change| {
+                    // soo... we do an awkward little dance here. out data is a Bytes struct, which we
+                    // can cheaply get subslices from. the diff algorithm gets a &[u8] and every
+                    // change gives us a &[u8]. now, we want to figure out what the offset of this
+                    // &[u8] was from the original bytes, so that we can call .slice() on it to get a
+                    // cheap reference-counted bytes rather than having to clone it. so we use the
+                    // subslice_offset crate which lets us do exactly that.
+                    let value = change.value();
+                    let value = [&left, &right]
+                        .iter()
+                        .filter_map(|b| match b[..].subslice_offset(value) {
+                            Some(index) => Some(b.slice(index..index + value.len())),
+                            None => None,
+                        })
+                        .next()
+                        .unwrap();
+                    (change.tag(), value)
+                })
+                .collect();
+
+            let insertions: usize = changes
+                .iter()
+                .filter(|(tag, _)| *tag == ChangeTag::Insert)
+                .count();
+            let deletions: usize = changes
+                .iter()
+                .filter(|(tag, _)| *tag == ChangeTag::Delete)
+                .count();
+
+            // compute additions
+            for segment in path.split("/") {
+                let end = path.subslice_offset(segment).unwrap() + segment.len();
+                let path = path[0..end].to_string();
+                let mut summary = summary.entry(path).or_default();
+                summary.0 += insertions;
+                summary.1 += deletions;
+            }
+
+            files.insert(path.to_string(), changes);
+        }
 
         VersionDiff {
             left,
             right,
-            diff: Default::default(),
-            summary: Default::default(),
+            files,
+            summary,
         }
     }
 }
