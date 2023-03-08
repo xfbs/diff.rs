@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use flate2::bufread::GzDecoder;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use tar::Archive;
@@ -12,6 +12,7 @@ pub static CRATE_INFO_CACHE: Mutex<BTreeMap<String, Arc<CrateResponse>>> =
 pub static CRATE_SOURCE_CACHE: Mutex<BTreeMap<(String, String), Arc<CrateSource>>> =
     Mutex::new(BTreeMap::new());
 
+/// Crates.io response type for crate lookup
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateResponse {
     //pub categories: BTreeSet<String>,
@@ -20,16 +21,35 @@ pub struct CrateResponse {
     pub versions: Vec<VersionInfo>,
 }
 
+#[cfg(test)]
+#[tokio::test]
+async fn test_crate_response_decode() {
+    let serde: CrateResponse =
+        serde_json::from_slice(include_bytes!("../data/serde.json")).unwrap();
+    assert_eq!(serde.krate.id, "serde");
+    assert!(!serde.versions.is_empty());
+
+    let axum: CrateResponse =
+        serde_json::from_slice(include_bytes!("../data/axum.json")).unwrap();
+    assert_eq!(axum.krate.id, "axum");
+    assert!(!axum.versions.is_empty());
+
+    let reqwest: CrateResponse =
+        serde_json::from_slice(include_bytes!("../data/reqwest.json")).unwrap();
+    assert_eq!(reqwest.krate.id, "reqwest");
+    assert!(!reqwest.versions.is_empty());
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateInfo {
     pub id: String,
-    pub categories: BTreeSet<String>,
-    pub description: String,
-    pub downloads: u64,
-    pub exact_match: bool,
-    pub homepage: Option<Url>,
     pub max_version: String,
     pub max_stable_version: String,
+    //pub categories: BTreeSet<String>,
+    //pub description: String,
+    //pub downloads: u64,
+    //pub exact_match: bool,
+    //pub homepage: Option<Url>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -37,13 +57,13 @@ pub struct VersionInfo {
     pub checksum: String,
     #[serde(rename = "crate")]
     pub krate: String,
-    pub crate_size: Option<u64>,
     pub dl_path: String,
-    pub downloads: u64,
-    pub license: Option<String>,
     pub yanked: bool,
-    pub id: u64,
     pub num: String,
+    //pub id: u64,
+    //pub crate_size: Option<u64>,
+    //pub downloads: u64,
+    //pub license: Option<String>,
 }
 
 impl CrateInfo {
@@ -68,9 +88,15 @@ impl CrateInfo {
         let info = Arc::new(info);
 
         // save back into cache
-        let mut lock = CRATE_INFO_CACHE.lock().unwrap();
-        lock.insert(name.to_string(), info.clone());
+        Self::cache(info.clone());
+
         Ok(info)
+    }
+
+    pub fn cache<T: Into<Arc<CrateResponse>>>(response: T) {
+        let mut lock = CRATE_INFO_CACHE.lock().unwrap();
+        let response: Arc<CrateResponse> = response.into();
+        lock.insert(response.krate.id.clone(), response);
     }
 
     pub fn cached(name: &str) -> Option<Arc<CrateResponse>> {
@@ -78,6 +104,26 @@ impl CrateInfo {
         let lock = CRATE_INFO_CACHE.lock().unwrap();
         lock.get(name).cloned()
     }
+}
+
+#[test]
+fn test_crate_response_cache_missing() {
+    assert!(CrateInfo::cached("serde").is_none());
+}
+
+#[test]
+fn test_crate_response_cache_store() {
+    assert!(CrateInfo::cached("serde").is_none());
+    let crate_response = Arc::new(CrateResponse {
+        krate: CrateInfo {
+            id: "serde".into(),
+            max_version: "0.1.0".into(),
+            max_stable_version: "0.1.0".into(),
+        },
+        versions: Default::default(),
+    });
+    CrateInfo::cache(crate_response.clone());
+    assert_eq!(crate_response, CrateInfo::cached("serde").unwrap());
 }
 
 impl VersionInfo {
