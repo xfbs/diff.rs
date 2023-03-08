@@ -162,12 +162,14 @@ pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
     let mut current: NodeId = tree.root_node_id().unwrap().clone();
 
     for segment in path.split("/").with_position() {
-        current = tree
+        let result = tree
             .children_ids(&current)
             .unwrap()
-            .find(|i| tree.get(i).unwrap().data().data == segment.clone().into_inner())
-            .unwrap()
-            .clone();
+            .find(|i| tree.get(i).unwrap().data().data == segment.clone().into_inner());
+        current = match result {
+            Some(id) => id.clone(),
+            None => break,
+        };
         let node = tree.get_mut(&current).unwrap();
         match segment {
             Position::First(_s) | Position::Middle(_s) => {

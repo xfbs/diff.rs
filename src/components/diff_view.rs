@@ -86,10 +86,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
 
     // if this file does not exist, this will be none. so we use this trick to convert the none
     // case into an empty iterator, meaning that it will simply be rendered as an empty file.
-    let changes = changes
-        .iter()
-        .map(|changes| changes.iter())
-        .flatten();
+    let changes = changes.iter().map(|changes| changes.iter()).flatten();
     html! {
         <pre>
         {
