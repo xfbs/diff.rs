@@ -82,21 +82,31 @@ pub struct DiffViewProps {
 
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
+    let changes = props.diff.files.get(&props.path);
+
+    // if this file does not exist, this will be none. so we use this trick to convert the none
+    // case into an empty iterator, meaning that it will simply be rendered as an empty file.
+    let changes = changes
+        .iter()
+        .map(|changes| changes.iter())
+        .flatten();
     html! {
         <pre>
         {
-            props.diff.files.get(&props.path).unwrap().iter().map(|(tag, change)| {
-                let (sign, color) = match tag {
-                    ChangeTag::Delete => ("-", "red"),
-                    ChangeTag::Insert => ("+", "green"),
-                    ChangeTag::Equal => (" ", "default"),
-                };
-                html!{
-                    <span style={format!("color: {color};")}>
-                        { format!("{sign} {}", String::from_utf8_lossy(&change[..])) }
-                    </span>
-                }
-            }).collect::<Html>()
+            changes
+                .map(|(tag, change)| {
+                    let (sign, color) = match tag {
+                        ChangeTag::Delete => ("-", "red"),
+                        ChangeTag::Insert => ("+", "green"),
+                        ChangeTag::Equal => (" ", "default"),
+                    };
+                    html!{
+                        <span style={format!("color: {color};")}>
+                            { format!("{sign} {}", String::from_utf8_lossy(&change[..])) }
+                        </span>
+                    }
+                })
+                .collect::<Html>()
         }
         </pre>
     }
