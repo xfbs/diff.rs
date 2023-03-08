@@ -140,7 +140,9 @@ impl CrateSource {
             let mut entry = entry?;
             let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
             let path: String = path.chars().skip_while(|c| *c != '/').skip(1).collect();
-            let data = std::io::read_to_string(&mut entry)?;
+            let mut data = vec![];
+            entry.read_to_end(&mut data)?;
+            let data = String::from_utf8_lossy(&data).into_owned();
             self.add(&path, data);
         }
         Ok(())
