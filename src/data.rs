@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use flate2::bufread::GzDecoder;
 use serde::{Deserialize, Serialize};
+use similar::ChangeTag;
 use std::collections::BTreeMap;
 use std::io::{BufRead, Read};
 use std::sync::{Arc, Mutex};
@@ -139,5 +140,32 @@ impl CrateSource {
     /// Add a single file to crate source.
     pub fn add(&mut self, path: &str, data: String) {
         self.files.insert(path.to_string(), data);
+    }
+}
+
+/// Precomputed diff data
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VersionDiff {
+    left: Arc<CrateSource>,
+    right: Arc<CrateSource>,
+    diff: BTreeMap<String, Vec<(ChangeTag, String)>>,
+    summary: BTreeMap<String, (usize, usize)>,
+}
+
+impl VersionDiff {
+    /// Generate diff data
+    pub fn new<T1: Into<Arc<CrateSource>>, T2: Into<Arc<CrateSource>>>(
+        left: T1,
+        right: T2,
+    ) -> Self {
+        let left = left.into();
+        let right = right.into();
+
+        VersionDiff {
+            left,
+            right,
+            diff: Default::default(),
+            summary: Default::default(),
+        }
     }
 }
