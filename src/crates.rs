@@ -116,8 +116,8 @@ impl VersionInfo {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateSource {
-    pub files: BTreeMap<String, String>,
     pub version: VersionInfo,
+    pub files: BTreeMap<String, String>,
 }
 
 impl CrateSource {
