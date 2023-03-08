@@ -1,8 +1,18 @@
+# Stages: the build stage is where the code is build, and the publish stage is
+# where it is deployed to diff.rs.
 stages:
   - build
   - publish
 
-# build stage: builds everything using trunk.
+# Build stage: builds everything using trunk.
+#
+# Uses the "rust" docker image as base, just needs to add the wasm32 target and
+# download trunk. It downloads a pre-built version of trunk because that is
+# faster.
+#
+# Then performs a trunk release build. Trunk will put everything into the dist/
+# folder, so this is set up to export anything from that folder as artifact so
+# that the next CI stage has access to it.
 build:
   stage: build
   image: rust
@@ -17,7 +27,22 @@ build:
     paths:
       - dist
 
-# pages job: compress files and publish statically.
+# Pages job: compress files and publish statically. this takes the output from
+# the "build" job and produces a folder containing everything that needs to be
+# statically hosted.
+#
+# The way GitLab pages works is that when you have a CI job named "pages",
+# whatever this job produces will be statically hosted, so this is all that is
+# needed to deploy diff.rs.
+#
+# It compresses everything in the dist/ folder with brotli and gzip, because
+# GitLab pages has a feature where it will serve pre-compressed content if you
+# compress it like this. that means the page loads faster.
+#
+# Only thing we have to do is add a redirects file: because this is a
+# single-page app, we basically want every path to resolve to the index.html
+# (otherwise you get a 404 if you request diff.rs/serde, because there is no
+# actual file or folder named "serde").
 pages:
   stage: publish
   image: alpine
