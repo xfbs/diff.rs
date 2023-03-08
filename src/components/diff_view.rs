@@ -56,7 +56,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         />
         <Content>
         <div style="display: flex;">
-            <div style="width: 350px;">
+            <div style="width: 300px;">
                 <FileTree
                     diff={diff.clone()}
                     left={props.left.clone()}
