@@ -1,4 +1,5 @@
-use crate::crates::{CrateInfo, CrateResponse, VersionInfo};
+use crate::crates::{CrateResponse, VersionInfo};
+use crate::cache::*;
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use std::sync::Arc;
@@ -89,7 +90,7 @@ pub fn Diff(props: &DiffProps) -> Html {
 #[function_component]
 pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
     let info = use_future_with_deps(
-        |name| async move { CrateInfo::fetch_cached(&name).await },
+        |name| async move { CRATE_RESPONSE_CACHE.fetch_cached(&name).await },
         props.name.clone(),
     )?;
 
@@ -212,13 +213,13 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
 pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
     // fetch left version source
     let left = use_future_with_deps(
-        |version| async move { version.fetch_cached().await },
+        |version| async move { CRATE_SOURCE_CACHE.fetch_cached(&version).await },
         props.left.clone(),
     )?;
 
     // fetch right version source
     let right = use_future_with_deps(
-        |version| async move { version.fetch_cached().await },
+        |version| async move { CRATE_SOURCE_CACHE.fetch_cached(&version).await },
         props.right.clone(),
     )?;
 

@@ -7,11 +7,6 @@ use std::sync::{Arc, Mutex};
 use tar::Archive;
 use url::Url;
 
-pub static CRATE_INFO_CACHE: Mutex<BTreeMap<String, Arc<CrateResponse>>> =
-    Mutex::new(BTreeMap::new());
-pub static CRATE_SOURCE_CACHE: Mutex<BTreeMap<(String, String), Arc<CrateSource>>> =
-    Mutex::new(BTreeMap::new());
-
 /// Crates.io response type for crate lookup
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateResponse {
@@ -66,8 +61,8 @@ pub struct VersionInfo {
     //pub license: Option<String>,
 }
 
-impl CrateInfo {
-    pub async fn fetch(name: &str) -> Result<CrateResponse> {
+impl CrateResponse {
+    pub async fn fetch(name: &str) -> Result<Self> {
         let base: Url = "https://crates.io/api/v1/crates/".parse()?;
         let url = base.join(name)?;
         let response = reqwest::get(url.as_str()).await?;
@@ -77,74 +72,9 @@ impl CrateInfo {
             Err(anyhow!("Error response: {}", response.status()))
         }
     }
-
-    pub async fn fetch_cached(name: &str) -> Result<Arc<CrateResponse>> {
-        if let Some(info) = Self::cached(name) {
-            return Ok(info);
-        }
-
-        // fetch it
-        let info = CrateInfo::fetch(name).await?;
-        let info = Arc::new(info);
-
-        // save back into cache
-        Self::cache(info.clone());
-
-        Ok(info)
-    }
-
-    pub fn cache<T: Into<Arc<CrateResponse>>>(response: T) {
-        let mut lock = CRATE_INFO_CACHE.lock().unwrap();
-        let response: Arc<CrateResponse> = response.into();
-        lock.insert(response.krate.id.clone(), response);
-    }
-
-    pub fn cached(name: &str) -> Option<Arc<CrateResponse>> {
-        // check if we have it cached
-        let lock = CRATE_INFO_CACHE.lock().unwrap();
-        lock.get(name).cloned()
-    }
-}
-
-#[test]
-fn test_crate_response_cache_missing() {
-    assert!(CrateInfo::cached("serde").is_none());
-}
-
-#[test]
-fn test_crate_response_cache_store() {
-    assert!(CrateInfo::cached("serde").is_none());
-    let crate_response = Arc::new(CrateResponse {
-        krate: CrateInfo {
-            id: "serde".into(),
-            max_version: "0.1.0".into(),
-            max_stable_version: "0.1.0".into(),
-        },
-        versions: Default::default(),
-    });
-    CrateInfo::cache(crate_response.clone());
-    assert_eq!(crate_response, CrateInfo::cached("serde").unwrap());
 }
 
 impl VersionInfo {
-    pub fn cached(&self) -> Option<Arc<CrateSource>> {
-        let lock = CRATE_SOURCE_CACHE.lock().unwrap();
-        lock.get(&(self.krate.clone(), self.num.clone())).cloned()
-    }
-
-    pub async fn fetch_cached(&self) -> Result<Arc<CrateSource>> {
-        if let Some(source) = self.cached() {
-            return Ok(source);
-        }
-
-        let source = self.fetch().await?;
-        let source = Arc::new(source);
-
-        let mut lock = CRATE_SOURCE_CACHE.lock().unwrap();
-        lock.insert((self.krate.clone(), self.num.clone()), source.clone());
-        Ok(source)
-    }
-
     pub async fn fetch(&self) -> Result<CrateSource> {
         let base: Url = "https://crates.io/".parse()?;
         let url = base.join(&self.dl_path)?;
