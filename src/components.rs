@@ -128,7 +128,8 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
             let left = props
                 .left
                 .as_ref()
-                .unwrap_or(&props.info.krate.max_stable_version);
+                .or(props.info.krate.max_stable_version.as_ref())
+                .unwrap_or(&props.info.krate.max_version);
             let right = props
                 .right
                 .as_ref()
@@ -190,7 +191,7 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
             name={props.info.krate.id.clone()}
             left={props.left.num.clone()}
             right={props.right.num.clone()}
-            versions={props.info.versions.iter().map(|v| v.num.clone()).collect::<Vec<_>>()}
+            info={props.info.clone()}
         />
         <Center>
             <Loading title={"Loading crate"} status={"Loading crate source"} />

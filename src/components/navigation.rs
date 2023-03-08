@@ -72,8 +72,7 @@ pub struct ComplexNavbarProps {
     pub name: String,
     pub left: String,
     pub right: String,
-    #[prop_or_default]
-    pub versions: Vec<String>,
+    pub info: Arc<CrateResponse>,
     #[prop_or_default]
     pub onchange: Callback<(String, String)>,
 }
@@ -81,15 +80,24 @@ pub struct ComplexNavbarProps {
 #[function_component]
 pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
     let disabled = vec![props.left.clone(), props.right.clone()];
-    let versions = match props.versions.is_empty() {
+    let prop_versions: Vec<_> = props.info.versions.iter().map(|v| v.num.clone()).collect();
+    let versions = match prop_versions.is_empty() {
         true => &disabled,
-        false => &props.versions,
+        false => &prop_versions,
     };
 
-    let versions: IArray<(IString, AttrValue)> = versions
+    let versions: IArray<(IString, AttrValue)> = props
+        .info
+        .versions
         .iter()
-        .map(|v| IString::from(v.clone()))
-        .map(|val| (val.clone(), val.clone()))
+        .map(|version| (version, IString::from(version.num.clone())))
+        .map(|(version, num)| {
+            if version.yanked {
+                (num.clone(), format!("{num} (yanked)").into())
+            } else {
+                (num.clone(), num.clone())
+            }
+        })
         .collect();
 
     html! {
@@ -109,7 +117,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                     <HtmlSelect<IString>
                         minimal={true}
                         options={versions.clone()}
-                        disabled={props.versions.is_empty()}
+                        disabled={prop_versions.is_empty()}
                         value={Some(props.left.clone().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();
@@ -125,7 +133,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                     <HtmlSelect<IString>
                         minimal={true}
                         options={versions.clone()}
-                        disabled={props.versions.is_empty()}
+                        disabled={prop_versions.is_empty()}
                         value={Some(props.right.clone().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();

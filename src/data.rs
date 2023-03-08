@@ -42,7 +42,7 @@ async fn test_crate_response_decode() {
 pub struct CrateInfo {
     pub id: String,
     pub max_version: String,
-    pub max_stable_version: String,
+    pub max_stable_version: Option<String>,
     //pub categories: BTreeSet<String>,
     //pub description: String,
     //pub downloads: u64,

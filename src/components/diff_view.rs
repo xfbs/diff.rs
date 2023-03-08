@@ -39,7 +39,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             name={props.info.krate.id.clone()}
             left={props.left.version.num.clone()}
             right={props.right.version.num.clone()}
-            versions={props.info.versions.iter().map(|v| v.num.clone()).collect::<Vec<_>>()}
+            info={props.info.clone()}
             onchange={
                 let name = props.info.krate.id.clone();
                 let path = props.path.clone();
