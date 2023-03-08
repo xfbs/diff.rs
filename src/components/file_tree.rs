@@ -1,5 +1,5 @@
 use crate::components::*;
-use crate::crates::CrateSource;
+use crate::data::CrateSource;
 use anyhow::Result;
 use itertools::{Itertools, Position};
 use std::collections::BTreeSet;

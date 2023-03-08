@@ -1,8 +1,8 @@
+use crate::data::*;
 use anyhow::{anyhow, Result};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use url::Url;
-use crate::crates::*;
 
 /// Crate response cache
 pub struct CrateResponseCache(Mutex<BTreeMap<String, Arc<CrateResponse>>>);
@@ -101,14 +101,18 @@ impl CrateSourceCache {
     fn cache<T: Into<Arc<CrateSource>>>(&self, source: T) {
         let mut lock = self.0.lock().unwrap();
         let source: Arc<CrateSource> = source.into();
-        lock.insert((source.version.krate.clone(), source.version.num.clone()), source);
+        lock.insert(
+            (source.version.krate.clone(), source.version.num.clone()),
+            source,
+        );
     }
 
     /// Lookup in cache
     pub fn cached(&self, version: &VersionInfo) -> Option<Arc<CrateSource>> {
         // check if we have it cached
         let lock = self.0.lock().unwrap();
-        lock.get(&(version.krate.clone(), version.num.clone())).cloned()
+        lock.get(&(version.krate.clone(), version.num.clone()))
+            .cloned()
     }
 }
 

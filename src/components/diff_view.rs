@@ -1,5 +1,5 @@
 use super::*;
-use crate::crates::{CrateResponse, CrateSource};
+use crate::data::{CrateResponse, CrateSource};
 use similar::{ChangeTag, TextDiff};
 use std::sync::Arc;
 

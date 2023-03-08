@@ -1,5 +1,5 @@
-use crate::crates::{CrateResponse, VersionInfo};
 use crate::cache::*;
+use crate::data::{CrateResponse, VersionInfo};
 use crate::router::*;
 use implicit_clone::unsync::{IArray, IString};
 use std::sync::Arc;

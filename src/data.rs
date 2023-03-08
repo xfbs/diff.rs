@@ -24,8 +24,7 @@ async fn test_crate_response_decode() {
     assert_eq!(serde.krate.id, "serde");
     assert!(!serde.versions.is_empty());
 
-    let axum: CrateResponse =
-        serde_json::from_slice(include_bytes!("../data/axum.json")).unwrap();
+    let axum: CrateResponse = serde_json::from_slice(include_bytes!("../data/axum.json")).unwrap();
     assert_eq!(axum.krate.id, "axum");
     assert!(!axum.versions.is_empty());
 
