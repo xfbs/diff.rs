@@ -1,12 +1,11 @@
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
-use itertools::{Itertools, Position};
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, Read};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;

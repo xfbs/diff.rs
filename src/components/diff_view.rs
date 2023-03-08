@@ -1,7 +1,6 @@
 use super::*;
 use crate::data::{CrateResponse, CrateSource, VersionDiff};
-use bytes::Bytes;
-use similar::{ChangeTag, TextDiff};
+use similar::ChangeTag;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -84,7 +83,6 @@ pub struct DiffViewProps {
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
     html! {
-        <>
         <pre>
         {
             props.diff.files.get(&props.path).unwrap().iter().map(|(tag, change)| {
@@ -101,6 +99,5 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
             }).collect::<Html>()
         }
         </pre>
-        </>
     }
 }

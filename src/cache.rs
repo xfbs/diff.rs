@@ -1,8 +1,7 @@
 use crate::data::*;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
-use url::Url;
 
 /// Crate response cache
 pub struct CrateResponseCache(Mutex<BTreeMap<String, Arc<CrateResponse>>>);

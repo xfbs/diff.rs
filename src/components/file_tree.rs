@@ -2,7 +2,6 @@ use crate::components::*;
 use crate::data::{CrateSource, VersionDiff};
 use anyhow::Result;
 use itertools::{Itertools, Position};
-use std::collections::BTreeSet;
 use std::rc::Rc;
 use std::sync::Arc;
 use subslice_offset::SubsliceOffset;
@@ -20,7 +19,7 @@ pub struct FileTreeProps {
 #[function_component]
 pub fn FileTree(props: &FileTreeProps) -> Html {
     // use state: we build and cache a tree.
-    let mut tree: TreeData<String> = use_memo(|diff| build_tree(&props.diff), props.diff.clone())
+    let mut tree: TreeData<String> = use_memo(|diff| build_tree(&diff), props.diff.clone())
         .as_ref()
         .clone();
 
