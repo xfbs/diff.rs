@@ -27,7 +27,7 @@ pub fn Home() -> Html {
             <Content>
                 <div style="width: 700px; margin: auto; padding-top: 20px;">
                     <Callout title={"Warning"} intent={Intent::Warning}>
-                        <p>{"This application is experimental. Some crates might not load correctly due to an issue with CORS headers from crates.io."}</p>
+                        <p>{"This application is experimental. Crates might intermittently not load correctly due to an issue with CORS headers from crates.io."}</p>
                     </Callout>
                     <h1>{ "diff.rs" }</h1>
                     <p>{ "View the differences between Rust crate versions. Enter a crate name such as "}<a href="/serde/1.0.153/1.0.153">{"serde"}</a>{" in the search field in the top-right corner to get started." }</p>
@@ -225,10 +225,37 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
         props.right.clone(),
     )?;
 
+    let navigator = use_navigator().unwrap();
     let (left, right) = match (&*left, &*right) {
         (Ok(left), Ok(right)) => (left, right),
         (Err(error), _) | (_, Err(error)) => {
-            return Ok(html! {<p>{format!("Error: {error}")}</p> })
+            return Ok(html! {
+                <>
+                <ComplexNavbar
+                    name={props.info.krate.id.clone()}
+                    left={props.left.num.clone()}
+                    right={props.right.num.clone()}
+                    info={props.info.clone()}
+                    onchange={
+                        let name = props.info.krate.id.clone();
+                        let path = props.path.clone();
+                        move |(left, right)| {
+                            navigator.push(&Route::File {
+                                name: name.clone(),
+                                left: left,
+                                right: right,
+                                path: path.clone().unwrap_or_default(),
+                            });
+                        }
+                    }
+                />
+                <Content>
+                    <Center>
+                        <Error title={"Loading crate"} status={format!("Error: {error}")} />
+                    </Center>
+                </Content>
+                </>
+            })
         }
     };
 
