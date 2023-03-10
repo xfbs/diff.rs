@@ -55,8 +55,8 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             }
         />
         <Content>
-        <div id="main">
-            <div id="files">
+        <main>
+            <nav id="files" aria-label="Files">
                 <FileTree
                     diff={diff.clone()}
                     left={props.left.clone()}
@@ -64,11 +64,11 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                     path={props.path.clone()}
                     {onselect}
                 />
-            </div>
+            </nav>
             <div id="diff-view">
                 <DiffView {diff} path={props.path.clone()} />
             </div>
-        </div>
+        </main>
         </Content>
         </>
     }
