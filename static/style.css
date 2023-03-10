@@ -1,0 +1,12 @@
+#main {
+    display: flex;
+}
+
+#files {
+    width: 300px;
+}
+
+#diff-view {
+    width: 50%;
+    padding-left: 8px;
+}
