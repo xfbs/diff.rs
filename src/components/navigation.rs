@@ -9,7 +9,7 @@ pub struct NavbarProps {
 #[function_component]
 pub fn Navbar(props: &NavbarProps) -> Html {
     html! {
-        <nav class="bp3-navbar bp3-fixed-top" aria-label="Main">
+        <nav id="navbar" class="bp3-navbar bp3-fixed-top" aria-label="Main">
         { for props.children.iter() }
         </nav>
     }
