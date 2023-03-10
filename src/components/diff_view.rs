@@ -55,8 +55,8 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             }
         />
         <Content>
-        <div style="display: flex;">
-            <div style="width: 300px;">
+        <div id="main">
+            <div id="files">
                 <FileTree
                     diff={diff.clone()}
                     left={props.left.clone()}
@@ -65,7 +65,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                     {onselect}
                 />
             </div>
-            <div style="width: 50%; padding-left: 8px;">
+            <div id="diff-view">
                 <DiffView {diff} path={props.path.clone()} />
             </div>
         </div>
