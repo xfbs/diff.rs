@@ -60,7 +60,7 @@ fn test_crate_response_cache_store() {
         krate: CrateInfo {
             id: "serde".into(),
             max_version: "0.1.0".into(),
-            max_stable_version: "0.1.0".into(),
+            max_stable_version: Some("0.1.0".into()),
         },
         versions: Default::default(),
     });
