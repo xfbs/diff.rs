@@ -79,12 +79,7 @@ pub struct ComplexNavbarProps {
 
 #[function_component]
 pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
-    let disabled = vec![props.left.clone(), props.right.clone()];
     let prop_versions: Vec<_> = props.info.versions.iter().map(|v| v.num.clone()).collect();
-    let versions = match prop_versions.is_empty() {
-        true => &disabled,
-        false => &prop_versions,
-    };
 
     let versions: IArray<(IString, AttrValue)> = props
         .info
