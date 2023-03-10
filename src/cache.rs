@@ -82,7 +82,7 @@ impl CrateSourceCache {
 
     /// Lookup in cache or fetch
     pub async fn fetch_cached(&self, version: &VersionInfo) -> Result<Arc<CrateSource>> {
-        if let Some(source) = self.cached(&version) {
+        if let Some(source) = self.cached(version) {
             return Ok(source);
         }
 

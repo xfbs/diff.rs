@@ -95,7 +95,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
             if version.yanked {
                 (num.clone(), format!("{num} (yanked)").into())
             } else {
-                (num.clone(), num.clone())
+                (num.clone(), num)
             }
         })
         .collect();
@@ -132,7 +132,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 <NavbarHeading>
                     <HtmlSelect<IString>
                         minimal={true}
-                        options={versions.clone()}
+                        options={versions}
                         disabled={prop_versions.is_empty()}
                         value={Some(props.right.clone().into()) as Option<IString>}
                         onchange={

@@ -18,7 +18,7 @@ pub fn Search() -> Html {
                 }
             }
             onkeydown={
-                let state = state.clone();
+                let state = state;
                 move |event: KeyboardEvent| {
                     if event.key() == "Enter" {
                         navigator.push(&Route::Crate {
