@@ -19,7 +19,7 @@ pub struct FileTreeProps {
 #[function_component]
 pub fn FileTree(props: &FileTreeProps) -> Html {
     // use state: we build and cache a tree.
-    let mut tree: TreeData<String> = use_memo(|diff| build_tree(&diff), props.diff.clone())
+    let mut tree: TreeData<String> = use_memo(|diff| build_tree(diff), props.diff.clone())
         .as_ref()
         .clone();
 
@@ -83,9 +83,9 @@ pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
 
     for path in diff.files.keys() {
         let mut pos = root.clone();
-        for segment in path.split("/").with_position() {
+        for segment in path.split('/').with_position() {
             let summary = {
-                let segment = segment.clone().into_inner();
+                let segment = segment.into_inner();
                 let end = path.subslice_offset(segment).unwrap() + segment.len();
                 let path = &path[0..end];
                 diff.summary.get(path).cloned().unwrap_or_default()
@@ -161,11 +161,11 @@ pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
     let mut tree = tree.borrow_mut();
     let mut current: NodeId = tree.root_node_id().unwrap().clone();
 
-    for segment in path.split("/").with_position() {
+    for segment in path.split('/').with_position() {
         let result = tree
             .children_ids(&current)
             .unwrap()
-            .find(|i| tree.get(i).unwrap().data().data == segment.clone().into_inner());
+            .find(|i| tree.get(i).unwrap().data().data == segment.into_inner());
         current = match result {
             Some(id) => id.clone(),
             None => break,

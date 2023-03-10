@@ -242,8 +242,8 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                         move |(left, right)| {
                             navigator.push(&Route::File {
                                 name: name.clone(),
-                                left: left,
-                                right: right,
+                                left,
+                                right,
                                 path: path.clone().unwrap_or_default(),
                             });
                         }

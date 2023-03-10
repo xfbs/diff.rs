@@ -199,9 +199,10 @@ impl VersionDiff {
                     let value = change.value();
                     let value = [&left, &right]
                         .iter()
-                        .filter_map(|b| match b[..].subslice_offset(value) {
-                            Some(index) => Some(b.slice(index..index + value.len())),
-                            None => None,
+                        .filter_map(|b| {
+                            b[..]
+                                .subslice_offset(value)
+                                .map(|index| b.slice(index..index + value.len()))
                         })
                         .next()
                         .unwrap();
@@ -219,7 +220,7 @@ impl VersionDiff {
                 .count();
 
             // compute additions
-            for segment in path.split("/") {
+            for segment in path.split('/') {
                 let end = path.subslice_offset(segment).unwrap() + segment.len();
                 let path = path[0..end].to_string();
                 let mut summary = summary.entry(path).or_default();

@@ -43,12 +43,12 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             onchange={
                 let name = props.info.krate.id.clone();
                 let path = props.path.clone();
-                let navigator = navigator.clone();
+                let navigator = navigator;
                 move |(left, right)| {
                     navigator.push(&Route::File {
                         name: name.clone(),
-                        left: left,
-                        right: right,
+                        left,
+                        right,
                         path: path.clone(),
                     });
                 }
@@ -86,7 +86,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
 
     // if this file does not exist, this will be none. so we use this trick to convert the none
     // case into an empty iterator, meaning that it will simply be rendered as an empty file.
-    let changes = changes.iter().map(|changes| changes.iter()).flatten();
+    let changes = changes.iter().flat_map(|changes| changes.iter());
     html! {
         <pre>
         {
