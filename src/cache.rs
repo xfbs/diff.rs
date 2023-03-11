@@ -1,5 +1,6 @@
 use crate::data::*;
 use anyhow::Result;
+use log::*;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
@@ -18,6 +19,7 @@ impl CrateResponseCache {
     /// Lookup in cache or fetch
     pub async fn fetch_cached(&self, name: &str) -> Result<Arc<CrateResponse>> {
         if let Some(info) = self.cached(name) {
+            info!("Fetching crate metadata for {name} from cache");
             return Ok(info);
         }
 
@@ -35,6 +37,7 @@ impl CrateResponseCache {
     fn cache<T: Into<Arc<CrateResponse>>>(&self, response: T) {
         let mut lock = self.0.lock().unwrap();
         let response: Arc<CrateResponse> = response.into();
+        info!("Storing crate metadata for {} in cache", response.krate.id);
         lock.insert(response.krate.id.clone(), response);
     }
 
@@ -83,6 +86,10 @@ impl CrateSourceCache {
     /// Lookup in cache or fetch
     pub async fn fetch_cached(&self, version: &VersionInfo) -> Result<Arc<CrateSource>> {
         if let Some(source) = self.cached(version) {
+            info!(
+                "Fetching crate source for {} v{} from cache",
+                version.krate, version.num
+            );
             return Ok(source);
         }
 
@@ -100,6 +107,10 @@ impl CrateSourceCache {
     fn cache<T: Into<Arc<CrateSource>>>(&self, source: T) {
         let mut lock = self.0.lock().unwrap();
         let source: Arc<CrateSource> = source.into();
+        info!(
+            "Storing crate source {} v{} in cache",
+            source.version.krate, source.version.num
+        );
         lock.insert(
             (source.version.krate.clone(), source.version.num.clone()),
             source,
