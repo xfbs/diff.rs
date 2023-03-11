@@ -1,5 +1,6 @@
 :root {
-    --top-nav-height: 50px;  /* keep in sync with `blueprint.css` */
+    --top-nav-height: 50px;
+    /* keep in sync with `blueprint.css` */
 }
 
 body {
@@ -8,6 +9,10 @@ body {
 
 main {
     display: flex;
+}
+
+pre {
+    margin: 0;
 }
 
 #files {
@@ -21,4 +26,35 @@ main {
     padding-left: 8px;
     overflow: scroll;
     height: calc(100vh - var(--top-nav-height));
+}
+
+.out-of-context {
+    filter: opacity(0.7);
+}
+
+.out-of-context.folded {
+    border: 1px solid black;
+    padding: 1em;
+    text-align: center;
+    filter: none;
+    background-color: transparent;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.folded {
+    margin: 1em 0;
+}
+
+.folding-sticky {
+    position: sticky;
+    top: 0;
+    border: 1px solid black;
+    padding: 1em;
+    text-align: center;
+    filter: none;
+    background-color: white;
+    width: 100%;
+    margin: 1em 0;
+    z-index: 100;
 }
