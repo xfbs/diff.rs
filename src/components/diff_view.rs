@@ -1,5 +1,5 @@
 use super::*;
-use crate::data::{CrateResponse, CrateSource, VersionDiff};
+use crate::data::{CrateResponse, CrateSource, VersionDiff, FileDiff};
 use similar::ChangeTag;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -82,13 +82,13 @@ pub struct DiffViewProps {
 
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
-    let changes = props.diff.files.get(&props.path);
-    let ranges = props.diff.context_ranges.get(&props.path);
+    let empty = FileDiff::default();
+    let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
 
     // if this file does not exist, this will be none. so we use this trick to convert the none
     // case into an empty iterator, meaning that it will simply be rendered as an empty file.
-    let mut changes = changes.iter().flat_map(|changes| changes.iter());
-    let ranges = ranges.iter().flat_map(|changes| changes.iter());
+    let mut changes = file_diff.changes.iter();
+    let ranges = file_diff.context_ranges.iter();
 
     let mut cursor = 0;
     let mut stack: Vec<(bool, Vec<_>)> = vec![];
@@ -121,9 +121,10 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
         .diff
         .files
         .get(&props.path)
-        .map(|c| c.len().max(1))
+        .map(|c| c.changes.len().max(1))
         .unwrap_or(1)
-        .ilog10() as usize;
+        .to_string()
+        .len();
 
     html! {
         <pre>

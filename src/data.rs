@@ -138,6 +138,14 @@ impl CrateSource {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct FileDiff {
+    /// Diff in this file
+    pub changes: Vec<(ChangeTag, Bytes)>,
+    /// Ranges of lines to show for each file
+    pub context_ranges: Vec<Range<usize>>,
+}
+
 /// Precomputed diff data
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VersionDiff {
@@ -145,10 +153,8 @@ pub struct VersionDiff {
     pub left: Arc<CrateSource>,
     /// Right crate source that is diffed
     pub right: Arc<CrateSource>,
-    /// Diff of files
-    pub files: BTreeMap<String, Vec<(ChangeTag, Bytes)>>,
-    /// Ranges of lines to show for each file
-    pub context_ranges: BTreeMap<String, Vec<Range<usize>>>,
+    /// Files in this version diff
+    pub files: BTreeMap<String, FileDiff>,
     /// Summaries of files and folders
     pub summary: BTreeMap<String, (usize, usize)>,
 }
@@ -170,7 +176,6 @@ impl VersionDiff {
         );
 
         let mut files = BTreeMap::new();
-        let mut context_ranges = BTreeMap::new();
         let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
 
         // intersection of file paths in both left and right crate sources
@@ -250,6 +255,7 @@ impl VersionDiff {
                     last_hunk = hunk;
                 }
             }
+
             // Push the last hunk we've computed if any
             if last_hunk.end != 0 {
                 ranges.push(last_hunk)
@@ -264,15 +270,16 @@ impl VersionDiff {
                 summary.1 += deletions;
             }
 
-            files.insert(path.to_string(), changes);
-            context_ranges.insert(path.to_string(), ranges);
+            files.insert(path.to_string(), FileDiff {
+                changes,
+                context_ranges: ranges
+            });
         }
 
         VersionDiff {
             left,
             right,
             files,
-            context_ranges,
             summary,
         }
     }
