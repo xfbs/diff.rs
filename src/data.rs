@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
+use log::*;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, BTreeSet};
@@ -68,6 +69,7 @@ pub struct VersionInfo {
 impl CrateResponse {
     /// Fetch a CrateResponse for the given crate.
     pub async fn fetch(name: &str) -> Result<Self> {
+        info!("Fetching crate metadata for {name} from network");
         let base: Url = "https://crates.io/api/v1/crates/".parse()?;
         let url = base.join(name)?;
         let response = reqwest::get(url.as_str()).await?;
@@ -82,6 +84,10 @@ impl CrateResponse {
 impl VersionInfo {
     /// Fetch a crate source for the given version.
     pub async fn fetch(&self) -> Result<CrateSource> {
+        info!(
+            "Fetching crate source for {} v{} from network",
+            self.krate, self.num
+        );
         let base: Url = "https://crates.io/".parse()?;
         let url = base.join(&self.dl_path)?;
         let response = reqwest::get(url.as_str()).await?;
@@ -166,6 +172,11 @@ impl VersionDiff {
     ) -> Self {
         let left = left.into();
         let right = right.into();
+        info!(
+            "Computing diff for {} version {} and {}",
+            left.version.krate, left.version.num, right.version.num
+        );
+
         let mut files = BTreeMap::new();
         let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
 
@@ -179,6 +190,8 @@ impl VersionDiff {
 
         // compute diffs
         for path in file_paths.into_iter() {
+            info!("Computing diff for {path}");
+
             // lookup files, default to empty bytes
             let left = left.files.get(path).cloned().unwrap_or_default();
             let right = right.files.get(path).cloned().unwrap_or_default();
