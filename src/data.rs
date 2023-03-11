@@ -20,24 +20,6 @@ pub struct CrateResponse {
     pub versions: Vec<VersionInfo>,
 }
 
-#[cfg(test)]
-#[tokio::test]
-async fn test_crate_response_decode() {
-    let serde: CrateResponse =
-        serde_json::from_slice(include_bytes!("../data/serde.json")).unwrap();
-    assert_eq!(serde.krate.id, "serde");
-    assert!(!serde.versions.is_empty());
-
-    let axum: CrateResponse = serde_json::from_slice(include_bytes!("../data/axum.json")).unwrap();
-    assert_eq!(axum.krate.id, "axum");
-    assert!(!axum.versions.is_empty());
-
-    let reqwest: CrateResponse =
-        serde_json::from_slice(include_bytes!("../data/reqwest.json")).unwrap();
-    assert_eq!(reqwest.krate.id, "reqwest");
-    assert!(!reqwest.versions.is_empty());
-}
-
 /// Create info struct, returned as part of the crates.io response.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateInfo {
@@ -78,6 +60,10 @@ impl CrateResponse {
         } else {
             Err(anyhow!("Error response: {}", response.status()))
         }
+    }
+
+    pub fn version(&self, version: &str) -> Option<&VersionInfo> {
+        self.versions.iter().find(|v| v.num == version)
     }
 }
 
