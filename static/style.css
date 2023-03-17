@@ -1,5 +1,6 @@
 :root {
-    --top-nav-height: 50px;  /* keep in sync with `blueprint.css` */
+    --top-nav-height: 50px;
+    /* keep in sync with `blueprint.css` */
 }
 
 body {
