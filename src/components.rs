@@ -146,8 +146,8 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     };
 
     // find krate version info
-    let left = props.info.versions.iter().find(|v| &v.num == left_str);
-    let right = props.info.versions.iter().find(|v| &v.num == right_str);
+    let left = props.info.version(left_str);
+    let right = props.info.version(right_str);
 
     match (left, right) {
         (Some(left), Some(right)) => html! {
