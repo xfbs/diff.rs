@@ -198,12 +198,11 @@ impl VersionDiff {
                     let value = change.value();
                     let value = [&left, &right]
                         .iter()
-                        .filter_map(|b| {
+                        .find_map(|b| {
                             b[..]
                                 .subslice_offset(value)
                                 .map(|index| b.slice(index..index + value.len()))
                         })
-                        .next()
                         .unwrap();
                     (change.tag(), value)
                 })
