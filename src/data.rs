@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, Read};
+use std::ops::Range;
 use std::sync::Arc;
 use subslice_offset::SubsliceOffset;
 use tar::Archive;
@@ -137,6 +138,14 @@ impl CrateSource {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct FileDiff {
+    /// Diff in this file
+    pub changes: Vec<(ChangeTag, Bytes)>,
+    /// Ranges of lines to show for each file
+    pub context_ranges: Vec<Range<usize>>,
+}
+
 /// Precomputed diff data
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VersionDiff {
@@ -144,11 +153,14 @@ pub struct VersionDiff {
     pub left: Arc<CrateSource>,
     /// Right crate source that is diffed
     pub right: Arc<CrateSource>,
-    /// Diff of files
-    pub files: BTreeMap<String, Vec<(ChangeTag, Bytes)>>,
+    /// Files in this version diff
+    pub files: BTreeMap<String, FileDiff>,
     /// Summaries of files and folders
     pub summary: BTreeMap<String, (usize, usize)>,
 }
+
+/// How many lines of context to show in a diff
+const CONTEXT_LINES: usize = 3;
 
 impl VersionDiff {
     /// Generate diff data
@@ -208,14 +220,46 @@ impl VersionDiff {
                 })
                 .collect();
 
-            let insertions: usize = changes
-                .iter()
-                .filter(|(tag, _)| *tag == ChangeTag::Insert)
-                .count();
-            let deletions: usize = changes
-                .iter()
-                .filter(|(tag, _)| *tag == ChangeTag::Delete)
-                .count();
+            let mut offsets = vec![];
+            let mut insertions = 0;
+            let mut deletions = 0;
+
+            for (index, (tag, _)) in changes.iter().enumerate() {
+                match tag {
+                    ChangeTag::Equal => {}
+                    ChangeTag::Delete => {
+                        deletions += 1;
+                        offsets.push(index);
+                    }
+                    ChangeTag::Insert => {
+                        insertions += 1;
+                        offsets.push(index);
+                    }
+                }
+            }
+
+            // compute ranges to show
+            let mut ranges = vec![];
+            let mut last_hunk = 0..0;
+
+            for offset in offsets.iter() {
+                let hunk = offset.saturating_sub(CONTEXT_LINES)..*offset + CONTEXT_LINES + 1;
+                let overlaps_with_last_hunk =
+                    hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end);
+                if overlaps_with_last_hunk {
+                    last_hunk = last_hunk.start..hunk.end;
+                } else {
+                    if last_hunk.end != 0 {
+                        ranges.push(last_hunk.clone());
+                    }
+                    last_hunk = hunk;
+                }
+            }
+
+            // Push the last hunk we've computed if any
+            if last_hunk.end != 0 {
+                ranges.push(last_hunk)
+            }
 
             // compute additions
             for segment in path.split('/') {
@@ -226,7 +270,13 @@ impl VersionDiff {
                 summary.1 += deletions;
             }
 
-            files.insert(path.to_string(), changes);
+            files.insert(
+                path.to_string(),
+                FileDiff {
+                    changes,
+                    context_ranges: ranges,
+                },
+            );
         }
 
         VersionDiff {
