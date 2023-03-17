@@ -175,9 +175,6 @@ impl VersionDiff {
             left.version.krate, left.version.num, right.version.num
         );
 
-        let mut files = BTreeMap::new();
-        let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
-
         // intersection of file paths in both left and right crate sources
         let file_paths: BTreeSet<&str> = left
             .files
@@ -186,97 +183,12 @@ impl VersionDiff {
             .map(|s| s.as_str())
             .collect();
 
+        let mut files = BTreeMap::new();
+        let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+
         // compute diffs
         for path in file_paths.into_iter() {
-            info!("Computing diff for {path}");
-
-            // lookup files, default to empty bytes
-            let left = left.files.get(path).cloned().unwrap_or_default();
-            let right = right.files.get(path).cloned().unwrap_or_default();
-
-            // generate text diff
-            let diff = TextDiff::from_lines(&left[..], &right[..]);
-
-            // collect changes
-            let changes: Vec<_> = diff
-                .iter_all_changes()
-                .map(|change| {
-                    // soo... we do an awkward little dance here. out data is a Bytes struct, which we
-                    // can cheaply get subslices from. the diff algorithm gets a &[u8] and every
-                    // change gives us a &[u8]. now, we want to figure out what the offset of this
-                    // &[u8] was from the original bytes, so that we can call .slice() on it to get a
-                    // cheap reference-counted bytes rather than having to clone it. so we use the
-                    // subslice_offset crate which lets us do exactly that.
-                    let value = change.value();
-                    let value = [&left, &right]
-                        .iter()
-                        .find_map(|b| {
-                            b[..]
-                                .subslice_offset(value)
-                                .map(|index| b.slice(index..index + value.len()))
-                        })
-                        .unwrap();
-                    (change.tag(), value)
-                })
-                .collect();
-
-            let mut offsets = vec![];
-            let mut insertions = 0;
-            let mut deletions = 0;
-
-            for (index, (tag, _)) in changes.iter().enumerate() {
-                match tag {
-                    ChangeTag::Equal => {}
-                    ChangeTag::Delete => {
-                        deletions += 1;
-                        offsets.push(index);
-                    }
-                    ChangeTag::Insert => {
-                        insertions += 1;
-                        offsets.push(index);
-                    }
-                }
-            }
-
-            // compute ranges to show
-            let mut ranges = vec![];
-            let mut last_hunk = 0..0;
-
-            for offset in offsets.iter() {
-                let hunk = offset.saturating_sub(CONTEXT_LINES)..*offset + CONTEXT_LINES + 1;
-                let overlaps_with_last_hunk =
-                    hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end);
-                if overlaps_with_last_hunk {
-                    last_hunk = last_hunk.start..hunk.end;
-                } else {
-                    if last_hunk.end != 0 {
-                        ranges.push(last_hunk.clone());
-                    }
-                    last_hunk = hunk;
-                }
-            }
-
-            // Push the last hunk we've computed if any
-            if last_hunk.end != 0 {
-                ranges.push(last_hunk)
-            }
-
-            // compute additions
-            for segment in path.split('/') {
-                let end = path.subslice_offset(segment).unwrap() + segment.len();
-                let path = path[0..end].to_string();
-                let mut summary = summary.entry(path).or_default();
-                summary.0 += insertions;
-                summary.1 += deletions;
-            }
-
-            files.insert(
-                path.to_string(),
-                FileDiff {
-                    changes,
-                    context_ranges: ranges,
-                },
-            );
+            compute_file_diff(&left, path, &right, &mut summary, &mut files);
         }
 
         VersionDiff {
@@ -286,4 +198,102 @@ impl VersionDiff {
             summary,
         }
     }
+}
+
+fn compute_file_diff(
+    left: &Arc<CrateSource>,
+    path: &str,
+    right: &Arc<CrateSource>,
+    summary: &mut BTreeMap<String, (usize, usize)>,
+    files: &mut BTreeMap<String, FileDiff>,
+) {
+    info!("Computing diff for {path}");
+
+    // lookup files, default to empty bytes
+    let left = left.files.get(path).cloned().unwrap_or_default();
+    let right = right.files.get(path).cloned().unwrap_or_default();
+
+    // generate text diff
+    let diff = TextDiff::from_lines(&left[..], &right[..]);
+
+    // collect changes
+    let changes: Vec<_> = diff
+        .iter_all_changes()
+        .map(|change| {
+            // soo... we do an awkward little dance here. out data is a Bytes struct, which we
+            // can cheaply get subslices from. the diff algorithm gets a &[u8] and every
+            // change gives us a &[u8]. now, we want to figure out what the offset of this
+            // &[u8] was from the original bytes, so that we can call .slice() on it to get a
+            // cheap reference-counted bytes rather than having to clone it. so we use the
+            // subslice_offset crate which lets us do exactly that.
+            let value = change.value();
+            let value = [&left, &right]
+                .iter()
+                .find_map(|b| {
+                    b[..]
+                        .subslice_offset(value)
+                        .map(|index| b.slice(index..index + value.len()))
+                })
+                .unwrap();
+            (change.tag(), value)
+        })
+        .collect();
+
+    let mut offsets = vec![];
+    let mut insertions = 0;
+    let mut deletions = 0;
+
+    for (index, (tag, _)) in changes.iter().enumerate() {
+        match tag {
+            ChangeTag::Equal => {}
+            ChangeTag::Delete => {
+                deletions += 1;
+                offsets.push(index);
+            }
+            ChangeTag::Insert => {
+                insertions += 1;
+                offsets.push(index);
+            }
+        }
+    }
+
+    // compute ranges to show
+    let mut ranges = vec![];
+    let mut last_hunk = 0..0;
+
+    for offset in offsets.iter() {
+        let hunk = offset.saturating_sub(CONTEXT_LINES)..*offset + CONTEXT_LINES + 1;
+        let overlaps_with_last_hunk =
+            hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end);
+        if overlaps_with_last_hunk {
+            last_hunk = last_hunk.start..hunk.end;
+        } else {
+            if last_hunk.end != 0 {
+                ranges.push(last_hunk.clone());
+            }
+            last_hunk = hunk;
+        }
+    }
+
+    // Push the last hunk we've computed if any
+    if last_hunk.end != 0 {
+        ranges.push(last_hunk)
+    }
+
+    // compute additions
+    for segment in path.split('/') {
+        let end = path.subslice_offset(segment).unwrap() + segment.len();
+        let path = path[0..end].to_string();
+        let mut summary = summary.entry(path).or_default();
+        summary.0 += insertions;
+        summary.1 += deletions;
+    }
+
+    files.insert(
+        path.to_string(),
+        FileDiff {
+            changes,
+            context_ranges: ranges,
+        },
+    );
 }
