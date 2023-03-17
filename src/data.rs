@@ -280,6 +280,7 @@ fn compute_file_diff(
 
 /// Compute contiguous ranges of changes given their `offsets`
 fn compute_hunk_ranges(offsets: Vec<usize>) -> Vec<Range<usize>> {
+    // TODO merge ranges that are <= CONTEXT_LINES away from each other
     let mut ranges = vec![];
     let mut last_hunk = 0..0;
 
