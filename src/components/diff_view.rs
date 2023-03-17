@@ -151,7 +151,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
                             key={format!("{:?}", range)}
                             group={group.clone()}
                             {in_context}
-                            group_start_index={overall_index}
+                            range={range.clone()}
                             {padding}
                         />
                     };
@@ -168,14 +168,13 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
 pub struct DiffLineGroupProps {
     group: Vec<(ChangeTag, bytes::Bytes)>,
     in_context: bool,
-    group_start_index: usize,
+    range: std::ops::Range<usize>,
     padding: usize,
 }
 
 #[function_component]
 pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
     let folded = use_state(|| !props.in_context);
-    let padding = props.padding;
     let onclick = {
         let folded = folded.clone();
         Callback::from(move |_| folded.set(!*folded))
@@ -186,13 +185,14 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
         (false, true) => "in-context",
         (false, false) => "out-of-context",
     };
-    let group_start_index = props.group_start_index;
-    let end_index = group_start_index + props.group.len();
+    let start_index = props.range.start;
+    let end_index = props.range.end;
+    let padding = props.padding;
 
     if *folded {
         html! {
             <button class={class} {onclick}>
-                {format!("Show lines {group_start_index} to {end_index}")}
+                {format!("Show lines {start_index} to {end_index}")}
             </button>
         }
     } else {
@@ -200,13 +200,13 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
             <>
             if !props.in_context {
                 <button class="folding-sticky" {onclick}>
-                    {format!("Fold lines {group_start_index} to {end_index}")}
+                    {format!("Fold lines {start_index} to {end_index}")}
                 </button>
             }
             <div class={class}>
             {
                 props.group.iter().enumerate().map(|(index, (tag, change))| {
-                    let overall_index = group_start_index + index;
+                    let overall_index = start_index + index;
                     let (sign, color) = match tag {
                         ChangeTag::Delete => ("-", "red"),
                         ChangeTag::Insert => ("+", "green"),
