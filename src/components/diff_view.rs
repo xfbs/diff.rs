@@ -174,22 +174,35 @@ pub struct DiffLineGroupProps {
 
 #[function_component]
 pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
-    let folded = use_state(|| !props.in_context);
+    let full_range = props.range.clone();
+    let range_to_hide = use_state(|| {
+        if props.in_context {
+            None
+        } else {
+            Some(full_range.clone())
+        }
+    });
     let onclick = {
-        let folded = folded.clone();
-        Callback::from(move |_| folded.set(!*folded))
+        let range_to_hide = range_to_hide.clone();
+        Callback::from(move |_| {
+            range_to_hide.set(match *range_to_hide {
+                Some(_) => None,
+                None => Some(full_range.clone()),
+            })
+        })
     };
-    let class = match (*folded, props.in_context) {
-        (true, true) => "folded in-context",
-        (true, false) => "folded out-of-context",
-        (false, true) => "in-context",
-        (false, false) => "out-of-context",
+    let class = match (range_to_hide.as_ref(), props.in_context) {
+        (Some(_), true) => "folded in-context",
+        (Some(_), false) => "folded out-of-context",
+        (None, true) => "in-context",
+        (None, false) => "out-of-context",
     };
+
     let start_index = props.range.start;
     let end_index = props.range.end;
     let padding = props.padding;
 
-    if *folded {
+    if range_to_hide.is_some() {
         html! {
             <button class={class} {onclick}>
                 {format!("Show lines {start_index} to {end_index}")}
