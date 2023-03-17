@@ -239,6 +239,7 @@ fn compute_file_diff(
         })
         .collect();
 
+    // Indexes of lines that contain an actual diff
     let mut offsets = vec![];
     let mut insertions = 0;
     let mut deletions = 0;
@@ -257,7 +258,28 @@ fn compute_file_diff(
         }
     }
 
-    // compute ranges to show
+    let ranges = compute_hunk_ranges(offsets);
+
+    // compute additions
+    for segment in path.split('/') {
+        let end = path.subslice_offset(segment).unwrap() + segment.len();
+        let path = path[0..end].to_string();
+        let mut summary = summary.entry(path).or_default();
+        summary.0 += insertions;
+        summary.1 += deletions;
+    }
+
+    files.insert(
+        path.to_string(),
+        FileDiff {
+            changes,
+            context_ranges: ranges,
+        },
+    );
+}
+
+/// Compute contiguous ranges of changes given their `offsets`
+fn compute_hunk_ranges(offsets: Vec<usize>) -> Vec<Range<usize>> {
     let mut ranges = vec![];
     let mut last_hunk = 0..0;
 
@@ -279,21 +301,5 @@ fn compute_file_diff(
     if last_hunk.end != 0 {
         ranges.push(last_hunk)
     }
-
-    // compute additions
-    for segment in path.split('/') {
-        let end = path.subslice_offset(segment).unwrap() + segment.len();
-        let path = path[0..end].to_string();
-        let mut summary = summary.entry(path).or_default();
-        summary.0 += insertions;
-        summary.1 += deletions;
-    }
-
-    files.insert(
-        path.to_string(),
-        FileDiff {
-            changes,
-            context_ranges: ranges,
-        },
-    );
+    ranges
 }
