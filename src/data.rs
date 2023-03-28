@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
 use log::*;
+use gloo::net::http::Request;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, BTreeSet};
@@ -55,8 +56,8 @@ impl CrateResponse {
         info!("Fetching crate metadata for {name} from network");
         let base: Url = "https://crates.io/api/v1/crates/".parse()?;
         let url = base.join(name)?;
-        let response = reqwest::get(url.as_str()).await?;
-        if response.status().is_success() {
+        let response = Request::get(url.as_str()).send().await?;
+        if response.ok() {
             Ok(response.json().await?)
         } else {
             Err(anyhow!("Error response: {}", response.status()))
@@ -77,9 +78,9 @@ impl VersionInfo {
         );
         let base: Url = "https://crates.io/".parse()?;
         let url = base.join(&self.dl_path)?;
-        let response = reqwest::get(url.as_str()).await?;
-        if response.status().is_success() {
-            let bytes = response.bytes().await?;
+        let response = Request::get(url.as_str()).send().await?;
+        if response.ok() {
+            let bytes: Bytes = response.binary().await?.into();
             let mut source = CrateSource::new(self.clone());
             source.parse_compressed(&mut &bytes[..])?;
             Ok(source)
