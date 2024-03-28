@@ -101,7 +101,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 <NavbarHeading><Link<Route> to={Route::Home}><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /> { "diff.rs" }</Link<Route>></NavbarHeading>
                 <NavbarDivider />
                 <NavbarHeading>
-                    { &props.name }
+                    { props.name.clone() }
                 </NavbarHeading>
                 <NavbarHeading>
                     <a href={format!("https://crates.io/crates/{}", props.name)}>

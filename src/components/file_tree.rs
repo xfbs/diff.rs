@@ -19,7 +19,7 @@ pub struct FileTreeProps {
 #[function_component]
 pub fn FileTree(props: &FileTreeProps) -> Html {
     // use state: we build and cache a tree.
-    let mut tree: TreeData<String> = use_memo(|diff| build_tree(diff), props.diff.clone())
+    let mut tree: TreeData<String> = use_memo(props.diff.clone(), |diff| build_tree(diff))
         .as_ref()
         .clone();
 

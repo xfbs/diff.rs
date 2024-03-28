@@ -26,9 +26,6 @@ pub fn Home() -> Html {
             <SimpleNavbar />
             <Content>
                 <div style="width: 700px; margin: auto; padding-top: 20px;">
-                    <Callout title={"Warning"} intent={Intent::Warning}>
-                        <p>{"This application is experimental. Crates might intermittently not load correctly due to an issue with CORS headers from crates.io."}</p>
-                    </Callout>
                     <h1>{ "diff.rs" }</h1>
                     <p>{ "View the differences between Rust crate versions. Enter a crate name such as "}<a href="/serde/1.0.153/1.0.153">{"serde"}</a>{" in the search field in the top-right corner to get started." }</p>
                     <p>{ "This is a WebAssembly-based web application written in Rust with "}<a href="https://docs.rs/yew">{"Yew"}</a>{". It uses the "}<a href="https://crates.io/">{"crates.io"}</a>{" API to fetch crate metadata, downloads and parses the crate sources in-memory and renders a diff in, all in the browser." }</p>
@@ -59,8 +56,11 @@ pub struct CrateProps {
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffProps {
     pub name: String,
+    #[prop_or_default]
     pub left: Option<String>,
+    #[prop_or_default]
     pub right: Option<String>,
+    #[prop_or_default]
     pub path: Option<String>,
 }
 
@@ -90,10 +90,9 @@ pub fn Diff(props: &DiffProps) -> Html {
 
 #[function_component]
 pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
-    let info = use_future_with_deps(
-        |name| async move { CRATE_RESPONSE_CACHE.fetch_cached(&name).await },
-        props.name.clone(),
-    )?;
+    let info = use_future_with(props.name.clone(), |name| async move {
+        CRATE_RESPONSE_CACHE.fetch_cached(&name).await
+    })?;
 
     match &*info {
         Ok(info) => Ok(html! {
@@ -214,16 +213,14 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
 #[function_component]
 pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
     // fetch left version source
-    let left = use_future_with_deps(
-        |version| async move { CRATE_SOURCE_CACHE.fetch_cached(&version).await },
-        props.left.clone(),
-    )?;
+    let left = use_future_with(props.left.clone(), |version| async move {
+        CRATE_SOURCE_CACHE.fetch_cached(&version).await
+    })?;
 
     // fetch right version source
-    let right = use_future_with_deps(
-        |version| async move { CRATE_SOURCE_CACHE.fetch_cached(&version).await },
-        props.right.clone(),
-    )?;
+    let right = use_future_with(props.right.clone(), |version| async move {
+        CRATE_SOURCE_CACHE.fetch_cached(&version).await
+    })?;
 
     let navigator = use_navigator().unwrap();
     let (left, right) = match (&*left, &*right) {

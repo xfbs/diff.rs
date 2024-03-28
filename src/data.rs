@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
-use log::*;
 use gloo::net::http::Request;
+use log::*;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use std::collections::{BTreeMap, BTreeSet};
@@ -266,7 +266,7 @@ impl VersionDiff {
             for segment in path.split('/') {
                 let end = path.subslice_offset(segment).unwrap() + segment.len();
                 let path = path[0..end].to_string();
-                let mut summary = summary.entry(path).or_default();
+                let summary = summary.entry(path).or_default();
                 summary.0 += insertions;
                 summary.1 += deletions;
             }

@@ -15,8 +15,8 @@ pub struct SourceViewProps {
 #[function_component]
 pub fn SourceView(props: &SourceViewProps) -> Html {
     let diff = use_memo(
-        |(left, right)| VersionDiff::new(left.clone(), right.clone()),
         (props.left.clone(), props.right.clone()),
+        |(left, right)| VersionDiff::new(left.clone(), right.clone()),
     );
     let navigator = use_navigator().unwrap();
     let onselect = {
