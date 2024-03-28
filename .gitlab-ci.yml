@@ -17,7 +17,7 @@ build:
   stage: build
   image: rust
   variables:
-    TRUNK_VERSION: 0.16.0
+    TRUNK_VERSION: 0.19.1
   before_script:
     - rustup target add wasm32-unknown-unknown
     - wget -qO- https://github.com/thedodd/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
