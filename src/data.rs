@@ -76,7 +76,10 @@ impl VersionInfo {
             "Fetching crate source for {} v{} from network",
             self.krate, self.num
         );
-        let url = format!("https://static.crates.io/crates/{}/{}-{}.crate", self.krate, self.krate, self.num);
+        let url = format!(
+            "https://static.crates.io/crates/{}/{}-{}.crate",
+            self.krate, self.krate, self.num
+        );
         let url: Url = url.parse()?;
         let response = Request::get(url.as_str()).send().await?;
         if response.ok() {

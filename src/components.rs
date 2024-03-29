@@ -133,6 +133,12 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
             let right = props
                 .right
                 .as_ref()
+                .or(props
+                    .info
+                    .versions
+                    .iter()
+                    .nth(1)
+                    .map(|version| &version.num))
                 .unwrap_or(&props.info.krate.max_version);
             return html! {
                 <Redirect<Route> to={Route::Diff {
