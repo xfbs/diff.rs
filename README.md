@@ -1,5 +1,7 @@
 # diff.rs
 
+[![ci status](https://gitlab.com/xfbs/diff.rs/badges/master/pipeline.svg)](https://gitlab.com/xfbs/diff.rs/-/pipelines)
+
 Web application to view the difference between Rust crate versions. It is
 deployed at [diff.rs](https://diff.rs).
 
