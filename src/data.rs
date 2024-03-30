@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
-use gloo::net::http::Request;
+use gloo_net::http::Request;
 use log::*;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};

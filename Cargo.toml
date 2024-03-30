@@ -9,9 +9,9 @@ anyhow = "1.0.69"
 bytes = "1.4.0"
 flate2 = "1.0.25"
 futures = "0.3.26"
-gloo = "0.8.0"
+gloo-net = "0.4.0"
 implicit-clone = "0.4.9"
-itertools = "0.10.5"
+itertools = "0.11.0"
 log = "0.4.17"
 serde = { version = "1.0.152", features = ["derive"] }
 similar = { version = "2.2.1", features = ["text", "bytes"] }

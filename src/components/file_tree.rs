@@ -83,9 +83,8 @@ pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
 
     for path in diff.files.keys() {
         let mut pos = root.clone();
-        for segment in path.split('/').with_position() {
+        for (position, segment) in path.split('/').with_position() {
             let summary = {
-                let segment = segment.into_inner();
                 let end = path.subslice_offset(segment).unwrap() + segment.len();
                 let path = &path[0..end];
                 diff.summary.get(path).cloned().unwrap_or_default()
@@ -101,19 +100,19 @@ pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
                     }
                 </span>
             };
-            match segment {
-                Position::First(s) | Position::Middle(s) => {
+            match position {
+                Position::First | Position::Middle => {
                     let existing = tree
                         .children_ids(&pos)
                         .unwrap()
-                        .find(|i| tree.get(i).unwrap().data().data == s);
+                        .find(|i| tree.get(i).unwrap().data().data == segment);
                     pos = if let Some(existing) = existing {
                         existing.clone()
                     } else {
                         tree.insert(
                             Node::new(NodeData {
-                                data: s.to_string(),
-                                label: s.into(),
+                                data: segment.into(),
+                                label: segment.into(),
                                 icon: Icon::FolderClose,
                                 has_caret: true,
                                 secondary_label: Some(summary_label),
@@ -124,12 +123,12 @@ pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
                         .unwrap()
                     };
                 }
-                Position::Last(s) | Position::Only(s) => {
+                Position::Last | Position::Only => {
                     pos = tree
                         .insert(
                             Node::new(NodeData {
-                                data: s.to_string(),
-                                label: s.into(),
+                                data: segment.into(),
+                                label: segment.into(),
                                 icon: Icon::Document,
                                 secondary_label: Some(summary_label),
                                 ..Default::default()
@@ -161,22 +160,22 @@ pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
     let mut tree = tree.borrow_mut();
     let mut current: NodeId = tree.root_node_id().unwrap().clone();
 
-    for segment in path.split('/').with_position() {
+    for (position, segment) in path.split('/').with_position() {
         let result = tree
             .children_ids(&current)
             .unwrap()
-            .find(|i| tree.get(i).unwrap().data().data == segment.into_inner());
+            .find(|i| tree.get(i).unwrap().data().data == segment);
         current = match result {
             Some(id) => id.clone(),
             None => break,
         };
         let node = tree.get_mut(&current).unwrap();
-        match segment {
-            Position::First(_s) | Position::Middle(_s) => {
+        match position {
+            Position::First | Position::Middle => {
                 node.data_mut().is_expanded = true;
                 node.data_mut().icon = Icon::FolderOpen;
             }
-            Position::Last(_s) | Position::Only(_s) => {
+            Position::Last | Position::Only => {
                 node.data_mut().is_selected = true;
             }
         }
