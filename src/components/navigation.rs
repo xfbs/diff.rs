@@ -1,4 +1,6 @@
 use super::*;
+use crate::data::CrateResponse;
+use semver::Version;
 use yew_icons::{Icon as YewIcon, IconId};
 
 #[derive(Properties, PartialEq)]
@@ -70,11 +72,11 @@ pub fn SimpleNavbar() -> Html {
 #[derive(Properties, PartialEq)]
 pub struct ComplexNavbarProps {
     pub name: String,
-    pub left: String,
-    pub right: String,
+    pub old: Version,
+    pub new: Version,
     pub info: Arc<CrateResponse>,
     #[prop_or_default]
-    pub onchange: Callback<(String, String)>,
+    pub onchange: Callback<(Version, Version)>,
 }
 
 #[function_component]
@@ -85,7 +87,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
         .info
         .versions
         .iter()
-        .map(|version| (version, IString::from(version.num.clone())))
+        .map(|version| (version, IString::from(version.num.to_string())))
         .map(|(version, num)| {
             if version.yanked {
                 (num.clone(), format!("{num} (yanked)").into())
@@ -113,12 +115,13 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                         minimal={true}
                         options={versions.clone()}
                         disabled={prop_versions.is_empty()}
-                        value={Some(props.left.clone().into()) as Option<IString>}
+                        value={Some(props.old.to_string().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();
-                            let right = props.right.clone();
-                            move |left: IString| {
-                                onchange.emit((left.to_string(), right.clone()))
+                            let new = props.new.clone();
+                            move |old: IString| {
+                                let old: Version = old.parse().unwrap();
+                                onchange.emit((old.clone(), new.clone()))
                             }
                         }
                     />
@@ -129,12 +132,13 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                         minimal={true}
                         options={versions}
                         disabled={prop_versions.is_empty()}
-                        value={Some(props.right.clone().into()) as Option<IString>}
+                        value={Some(props.new.to_string().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();
-                            let left = props.left.clone();
-                            move |right: IString| {
-                                onchange.emit((left.clone(), right.to_string()))
+                            let old = props.old.clone();
+                            move |new: IString| {
+                                let new: Version = new.parse().unwrap();
+                                onchange.emit((old.clone(), new.clone()))
                             }
                         }
                     />

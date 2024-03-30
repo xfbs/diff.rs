@@ -1,14 +1,18 @@
+use crate::version::{VersionId, VersionNamed};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use flate2::bufread::GzDecoder;
 use gloo_net::http::Request;
 use log::*;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
-use std::collections::{BTreeMap, BTreeSet};
-use std::io::{BufRead, Read};
-use std::ops::Range;
-use std::sync::Arc;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    io::{BufRead, Read},
+    ops::Range,
+    sync::Arc,
+};
 use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;
@@ -43,7 +47,7 @@ pub struct VersionInfo {
     pub krate: String,
     pub dl_path: String,
     pub yanked: bool,
-    pub num: String,
+    pub num: Version,
     //pub id: u64,
     //pub crate_size: Option<u64>,
     //pub downloads: u64,
@@ -64,8 +68,17 @@ impl CrateResponse {
         }
     }
 
-    pub fn version(&self, version: &str) -> Option<&VersionInfo> {
-        self.versions.iter().find(|v| v.num == version)
+    pub fn version(&self, version: VersionId) -> Option<&VersionInfo> {
+        match version {
+            VersionId::Exact(version) => self.versions.iter().find(|v| v.num == version),
+            VersionId::Named(VersionNamed::Latest) => self.versions.first(),
+            VersionId::Named(VersionNamed::Previous) => self.versions.get(1),
+            VersionId::Requirement(req) => self
+                .versions
+                .iter()
+                .filter(|v| req.matches(&v.num))
+                .max_by_key(|v| &v.num),
+        }
     }
 }
 

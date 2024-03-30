@@ -1,34 +1,36 @@
 use super::*;
-use crate::data::{CrateResponse, CrateSource, FileDiff, VersionDiff};
+use crate::{
+    data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
+    version::VersionId,
+};
+use semver::Version;
 use similar::ChangeTag;
-use std::rc::Rc;
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {
     pub info: Arc<CrateResponse>,
-    pub left: Arc<CrateSource>,
-    pub right: Arc<CrateSource>,
+    pub old: Arc<CrateSource>,
+    pub new: Arc<CrateSource>,
     pub path: String,
 }
 
 #[function_component]
 pub fn SourceView(props: &SourceViewProps) -> Html {
-    let diff = use_memo(
-        (props.left.clone(), props.right.clone()),
-        |(left, right)| VersionDiff::new(left.clone(), right.clone()),
-    );
+    let diff = use_memo((props.old.clone(), props.new.clone()), |(old, new)| {
+        VersionDiff::new(old.clone(), new.clone())
+    });
     let navigator = use_navigator().unwrap();
     let onselect = {
         let name = props.info.krate.id.clone();
-        let left = props.left.version.num.clone();
-        let right = props.right.version.num.clone();
+        let old: VersionId = props.old.version.num.clone().into();
+        let new: VersionId = props.new.version.num.clone().into();
         let navigator = navigator.clone();
         move |path: String| {
             navigator.push(&Route::File {
                 name: name.clone(),
-                left: left.clone(),
-                right: right.clone(),
+                old: old.clone(),
+                new: new.clone(),
                 path,
             })
         }
@@ -37,18 +39,18 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         <>
         <ComplexNavbar
             name={props.info.krate.id.clone()}
-            left={props.left.version.num.clone()}
-            right={props.right.version.num.clone()}
+            old={props.old.version.num.clone()}
+            new={props.new.version.num.clone()}
             info={props.info.clone()}
             onchange={
                 let name = props.info.krate.id.clone();
                 let path = props.path.clone();
                 let navigator = navigator;
-                move |(left, right)| {
+                move |(old, new): (Version, Version)| {
                     navigator.push(&Route::File {
                         name: name.clone(),
-                        left,
-                        right,
+                        old: old.clone().into(),
+                        new: new.clone().into(),
                         path: path.clone(),
                     });
                 }
@@ -59,8 +61,8 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             <nav id="files" aria-label="Files">
                 <FileTree
                     diff={diff.clone()}
-                    left={props.left.clone()}
-                    right={props.right.clone()}
+                    old={props.old.clone()}
+                    new={props.new.clone()}
                     path={props.path.clone()}
                     {onselect}
                 />

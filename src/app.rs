@@ -1,5 +1,7 @@
-use crate::components::*;
-
+use crate::{
+    version::{VersionId, VersionNamed},
+    views::*,
+};
 use yew::prelude::*;
 use yew_router::prelude::*;
 pub use yew_router::prelude::{use_navigator, Link, Redirect};
@@ -12,17 +14,17 @@ pub enum Route {
     Search { krate: String },
     #[at("/:name/")]
     Crate { name: String },
-    #[at("/:name/:left/:right")]
+    #[at("/:name/:old/:new")]
     Diff {
         name: String,
-        left: String,
-        right: String,
+        old: VersionId,
+        new: VersionId,
     },
-    #[at("/:name/:left/:right/*path")]
+    #[at("/:name/:old/:new/*path")]
     File {
         name: String,
-        left: String,
-        right: String,
+        old: VersionId,
+        new: VersionId,
         path: String,
     },
     #[not_found]
@@ -34,18 +36,22 @@ fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
         Route::Crate { name } => html! {
-            <Diff {name} />
+            <Diff
+                {name}
+                old={VersionId::Named(VersionNamed::Previous)}
+                new={VersionId::Named(VersionNamed::Latest)}
+            />
         },
-        Route::Diff { name, left, right } => html! {
-            <Diff {name} {left} {right} />
+        Route::Diff { name, old, new } => html! {
+            <Diff {name} {old} {new} />
         },
         Route::File {
             name,
-            left,
-            right,
+            old,
+            new,
             path,
         } => html! {
-            <Diff {name} {left} {right} {path} />
+            <Diff {name} {old} {new} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
         Route::Search { krate: _ } => html! { <p>{"Search"}</p> },

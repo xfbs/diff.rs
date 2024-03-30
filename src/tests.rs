@@ -1,8 +1,7 @@
 use crate::data::*;
 use anyhow::Result;
 use serde_json::from_reader;
-use std::fs::File;
-use std::io::BufReader;
+use std::{fs::File, io::BufReader};
 
 fn parse_canned_response(name: &str) -> Result<CrateResponse> {
     let response = File::open(format!("data/{name}.json"))?;
@@ -45,20 +44,20 @@ fn test_crate_response_decode_log() {
 #[test]
 fn can_parse_crate_source_log_0_4_15() {
     let log = parse_canned_response("log").unwrap();
-    let version = log.version("0.4.15").unwrap();
+    let version = log.version("0.4.15".parse().unwrap()).unwrap();
     let source = parse_canned_source(version).unwrap();
 }
 
 #[test]
 fn can_parse_crate_source_log_0_4_16() {
     let log = parse_canned_response("log").unwrap();
-    let version = log.version("0.4.16").unwrap();
+    let version = log.version("0.4.16".parse().unwrap()).unwrap();
     let source = parse_canned_source(version).unwrap();
 }
 
 #[test]
 fn can_parse_crate_source_log_0_4_17() {
     let log = parse_canned_response("log").unwrap();
-    let version = log.version("0.4.17").unwrap();
+    let version = log.version("0.4.17".parse().unwrap()).unwrap();
     let source = parse_canned_source(version).unwrap();
 }

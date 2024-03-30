@@ -1,8 +1,11 @@
 use crate::data::*;
 use anyhow::Result;
 use log::*;
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use semver::Version;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
 /// Crate response cache
 pub struct CrateResponseCache(Mutex<BTreeMap<String, Arc<CrateResponse>>>);
@@ -72,7 +75,7 @@ fn test_crate_response_cache_store() {
 }
 
 /// Crate source cache
-pub struct CrateSourceCache(Mutex<BTreeMap<(String, String), Arc<CrateSource>>>);
+pub struct CrateSourceCache(Mutex<BTreeMap<(String, Version), Arc<CrateSource>>>);
 
 /// Global crate source cache instance
 pub static CRATE_SOURCE_CACHE: CrateSourceCache = CrateSourceCache::new();

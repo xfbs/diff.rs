@@ -13,8 +13,11 @@ gloo-net = "0.4.0"
 implicit-clone = "0.4.9"
 itertools = "0.11.0"
 log = "0.4.17"
+semver = { version = "1.0.22", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }
+serde_typename = "0.1.0"
 similar = { version = "2.2.1", features = ["text", "bytes"] }
+strum = { version = "0.26.2", features = ["derive"] }
 subslice-offset = "0.1.1"
 tar = "0.4.38"
 url = { version = "2.3.1", features = ["serde"] }

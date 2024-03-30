@@ -23,6 +23,10 @@ setup:
     rustup target add wasm32-unknown-unknown
     cargo install trunk
 
+# Format code
+format:
+    cargo +nightly fmt
+
 # Launch local debug server
 serve:
     trunk serve

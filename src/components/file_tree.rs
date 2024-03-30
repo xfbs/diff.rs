@@ -1,16 +1,17 @@
-use crate::components::*;
-use crate::data::{CrateSource, VersionDiff};
+use crate::{
+    components::*,
+    data::{CrateSource, VersionDiff},
+};
 use anyhow::Result;
 use itertools::{Itertools, Position};
-use std::rc::Rc;
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 use subslice_offset::SubsliceOffset;
 use yewprint::id_tree::{InsertBehavior, Node, NodeId, TreeBuilder};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct FileTreeProps {
-    pub left: Arc<CrateSource>,
-    pub right: Arc<CrateSource>,
+    pub old: Arc<CrateSource>,
+    pub new: Arc<CrateSource>,
     pub diff: Rc<VersionDiff>,
     pub path: String,
     pub onselect: Callback<String>,
