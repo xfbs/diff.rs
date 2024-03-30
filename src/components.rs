@@ -136,8 +136,7 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
                 .or(props
                     .info
                     .versions
-                    .iter()
-                    .nth(1)
+                    .get(1)
                     .map(|version| &version.num))
                 .unwrap_or(&props.info.krate.max_version);
             return html! {
