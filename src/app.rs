@@ -62,7 +62,7 @@ fn switch(route: Route) -> Html {
             <Diff {name} {old} {new} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
-        Route::Search { krate: _ } => html! { <p>{"Search"}</p> },
+        Route::Search { krate } => html! { <Search search={krate} /> },
     }
 }
 

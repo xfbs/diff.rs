@@ -7,7 +7,7 @@ pub fn About() -> Html {
             <div class="flex-1">
                 <SimpleNavbar />
                 <Content>
-                    <div class="max-w-2xl m-auto pt-12">
+                    <div class="max-w-2xl m-auto p-4 pt-12">
                         <p>{ "View the differences between Rust crate versions. Enter a crate name such as "}<Link<Route> to={Route::Crate { name: "serde".into()}}>{"serde"}</Link<Route>>{" in the search field in the top-right corner to get started." }</p>
                         <p>{ "This is a WebAssembly-based web application written in Rust with "}<a href="https://docs.rs/yew">{"Yew"}</a>{". It uses the "}<a href="https://crates.io/">{"crates.io"}</a>{" API to fetch crate metadata, downloads and parses the crate sources in-memory and renders a diff in, all in the browser." }</p>
                         <p>{"Source code for this application is available at "}<a href="https://github.com/xfbs/diff.rs">{"github.com/xfbs/diff.rs"}</a>{"."}</p>

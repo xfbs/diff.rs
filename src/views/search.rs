@@ -1,16 +1,9 @@
 use super::*;
+use yew_hooks::prelude::*;
 
-#[function_component]
-fn Footer() -> Html {
-    html! {
-        <div class="text-center py-4">
-            <a href="https://github.com/xfbs/diff.rs">{"diff.rs"}</a>
-            {" build "}
-            <a class="font-mono" href={concat!("https://github.com/xfbs/diff.rs/commit/", env!("VERGEN_GIT_SHA"))}>{&env!("VERGEN_GIT_SHA")[0..8]}</a>
-            {", made with ❤️ by "}
-            <a href="https://github.com/xfbs">{"xfbs"}</a>
-        </div>
-    }
+#[derive(Properties, PartialEq)]
+pub struct SearchProps {
+    pub search: String,
 }
 
 #[function_component]
@@ -21,10 +14,14 @@ fn Logo() -> Html {
 }
 
 #[function_component]
-pub fn Home() -> Html {
+pub fn Search(props: &SearchProps) -> Html {
+    let state = use_debounce_state(String::new, 500);
+    state.set(props.search.clone());
     let navigator = use_navigator().unwrap();
     let onchange = move |input: String| {
-        if !input.is_empty() {
+        if input.is_empty() {
+            navigator.push(&Route::Home);
+        } else {
             navigator.push(&Route::Search { krate: input });
         }
     };
@@ -33,13 +30,15 @@ pub fn Home() -> Html {
             <div class="flex-1">
                 <SimpleNavbar />
                 <Content>
-                    <Logo />
                     <div class="max-w-3xl m-auto">
-                        <SearchBar value={""} {onchange} />
+                        <Logo />
+                        <SearchBar value={props.search.to_string()} {onchange} />
+                        <div class="my-6">
+                            <SearchResults query={state.to_string()} />
+                        </div>
                     </div>
                 </Content>
             </div>
-            <Footer />
         </div>
     }
 }

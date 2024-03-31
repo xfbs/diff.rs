@@ -18,6 +18,24 @@ use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;
 
+/// Crates.io response type for crate search
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct SearchResponse {
+    pub crates: Vec<CrateDetail>,
+}
+
+/// Create info struct, returned as part of the crates.io response.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct CrateDetail {
+    pub id: String,
+    pub max_version: String,
+    pub max_stable_version: Option<String>,
+    pub description: String,
+    pub downloads: u64,
+    pub exact_match: bool,
+    pub homepage: Option<Url>,
+}
+
 /// Crates.io response type for crate lookup
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateResponse {

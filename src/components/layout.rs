@@ -16,13 +16,14 @@ pub fn Center(props: &CenterProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct ContentProps {
+    #[prop_or_default]
     pub children: Children,
 }
 
 #[function_component]
 pub fn Content(props: &ContentProps) -> Html {
     html! {
-        <div style="">
+        <div>
             { for props.children.iter() }
         </div>
     }

@@ -16,7 +16,7 @@ pub struct NavbarProps {
 pub fn Navbar(props: &NavbarProps) -> Html {
     html! {
         <nav id="navbar" class="bg-[#f6f8fa] dark:bg-[#010409] sticky w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600 dark:text-gray-300" aria-label="Main">
-            <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 flex-col sm:flex-row gap-4">
                 { for props.children.iter() }
             </div>
         </nav>

@@ -15,5 +15,6 @@ mod about;
 mod diff;
 mod home;
 mod not_found;
+mod search;
 
-pub use self::{about::About, diff::Diff, home::Home, not_found::NotFound};
+pub use self::{about::About, diff::Diff, home::Home, not_found::NotFound, search::Search};
