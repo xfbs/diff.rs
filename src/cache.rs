@@ -136,7 +136,7 @@ fn test_crate_source_cache_missing() {
         checksum: "abc".into(),
         dl_path: "/path".into(),
         krate: "serde".into(),
-        num: "0.1.0".into(),
+        num: "0.1.0".parse().unwrap(),
         yanked: false,
     };
     assert!(cache.cached(&version).is_none());
@@ -149,7 +149,7 @@ fn test_crate_source_cache_store() {
         checksum: "abc".into(),
         dl_path: "/path".into(),
         krate: "serde".into(),
-        num: "0.1.0".into(),
+        num: "0.1.0".parse().unwrap(),
         yanked: false,
     };
     assert!(cache.cached(&version).is_none());

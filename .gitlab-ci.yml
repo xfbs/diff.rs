@@ -1,8 +1,27 @@
 # Stages: the build stage is where the code is build, and the publish stage is
 # where it is deployed to diff.rs.
 stages:
+  - check
   - build
   - publish
+
+# Run unit tests
+test:
+  stage: check
+  image: rust
+  script:
+    - cargo test
+
+# Check style by running clippy and rustfmt.
+style:
+  stage: check
+  image: rust
+  script:
+    - rustup component add clippy
+    - rustup toolchain add nightly
+    - rustup component add rustfmt --toolchain nightly
+    - cargo clippy -- --deny warnings
+    - cargo +nightly fmt --check
 
 # Build stage: builds everything using trunk.
 #
