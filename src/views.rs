@@ -7,8 +7,9 @@ use crate::{
 use std::sync::Arc;
 use yew::{prelude::*, suspense::*};
 
+mod about;
 mod diff;
 mod home;
 mod not_found;
 
-pub use self::{diff::Diff, home::Home, not_found::NotFound};
+pub use self::{about::About, diff::Diff, home::Home, not_found::NotFound};

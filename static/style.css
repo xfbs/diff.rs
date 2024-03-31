@@ -3,8 +3,9 @@
     /* keep in sync with `blueprint.css` */
 }
 
-body {
+html, body {
     margin: 0;
+    height: 100%;
 }
 
 main {

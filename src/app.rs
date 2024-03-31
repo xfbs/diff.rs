@@ -10,6 +10,8 @@ pub use yew_router::prelude::{use_navigator, Link, Redirect};
 pub enum Route {
     #[at("/")]
     Home,
+    #[at("/about")]
+    About,
     #[at("/search/:krate")]
     Search { krate: String },
     #[at("/:name/")]
@@ -35,6 +37,7 @@ pub enum Route {
 fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
+        Route::About => html! { <About /> },
         Route::Crate { name } => html! {
             <Diff
                 {name}
