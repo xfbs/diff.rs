@@ -10,10 +10,8 @@ fn parse_canned_response(name: &str) -> Result<CrateResponse> {
 }
 
 fn parse_canned_source(version: &VersionInfo) -> Result<CrateSource> {
-    let mut source = CrateSource::new(version.clone());
-    let mut data = File::open(format!("data/{}-{}.crate", version.krate, version.num))?;
-    let mut reader = BufReader::new(data);
-    source.parse_compressed(&mut reader)?;
+    let data = std::fs::read(format!("data/{}-{}.crate", version.krate, version.num))?;
+    let source = CrateSource::new(version.clone(), &data[..])?;
     Ok(source)
 }
 

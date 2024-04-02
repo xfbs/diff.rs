@@ -6,10 +6,11 @@ use gloo_net::http::Request;
 use log::*;
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use similar::{ChangeTag, TextDiff};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    io::{BufRead, Read},
+    io::Read,
     ops::Range,
     sync::Arc,
 };
@@ -42,7 +43,8 @@ pub struct CrateInfo {
 /// Version info struct, returned as part of the crates.io response.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct VersionInfo {
-    pub checksum: String,
+    #[serde(with = "hex")]
+    pub checksum: Vec<u8>,
     #[serde(rename = "crate")]
     pub krate: String,
     pub dl_path: String,
@@ -95,14 +97,14 @@ impl VersionInfo {
         );
         let url: Url = url.parse()?;
         let response = Request::get(url.as_str()).send().await?;
-        if response.ok() {
-            let bytes: Bytes = response.binary().await?.into();
-            let mut source = CrateSource::new(self.clone());
-            source.parse_compressed(&mut &bytes[..])?;
-            Ok(source)
-        } else {
-            Err(anyhow!("Error response: {}", response.status()))
+        if !response.ok() {
+            return Err(anyhow!("Error response: {}", response.status()));
         }
+
+        let bytes: Bytes = response.binary().await?.into();
+        let source = CrateSource::new(self.clone(), &bytes[..])?;
+
+        Ok(source)
     }
 }
 
@@ -117,22 +119,35 @@ pub struct CrateSource {
 
 impl CrateSource {
     /// Create empty crate source for the given version.
-    pub fn new(version: VersionInfo) -> Self {
-        CrateSource {
+    pub fn new(version: VersionInfo, data: &[u8]) -> Result<Self> {
+        let mut source = CrateSource {
             version,
             files: Default::default(),
-        }
+        };
+
+        source.parse_compressed(data)?;
+        Ok(source)
     }
 
     /// Parse gzipped tarball returned by crates.io.
-    pub fn parse_compressed(&mut self, data: &mut dyn BufRead) -> Result<()> {
+    fn parse_compressed(&mut self, data: &[u8]) -> Result<()> {
+        // compute hash
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        let hash = hasher.finalize();
+
+        // make sure hash matches
+        if hash[..] != self.version.checksum[..] {
+            return Err(anyhow!("Invalid hash sum for crate"));
+        }
+
         let mut decoder = GzDecoder::new(data);
         self.parse_archive(&mut decoder)?;
         Ok(())
     }
 
     /// Parse archive.
-    pub fn parse_archive(&mut self, data: &mut dyn Read) -> Result<()> {
+    fn parse_archive(&mut self, data: &mut dyn Read) -> Result<()> {
         let mut archive = Archive::new(data);
         for entry in archive.entries()? {
             let mut entry = entry?;
@@ -150,7 +165,7 @@ impl CrateSource {
     }
 
     /// Add a single file to crate source.
-    pub fn add<T: Into<Bytes>>(&mut self, path: &str, data: T) {
+    fn add<T: Into<Bytes>>(&mut self, path: &str, data: T) {
         self.files.insert(path.to_string(), data.into());
     }
 }
