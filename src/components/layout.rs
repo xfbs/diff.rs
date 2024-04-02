@@ -22,7 +22,7 @@ pub struct ContentProps {
 #[function_component]
 pub fn Content(props: &ContentProps) -> Html {
     html! {
-        <div style="margin-top: 50px;">
+        <div style="">
             { for props.children.iter() }
         </div>
     }
