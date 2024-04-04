@@ -177,6 +177,7 @@ dependencies = [
  "gloo-net 0.4.0",
  "hex",
  "implicit-clone",
+ "indexmap",
  "itertools",
  "log",
  "semver",
