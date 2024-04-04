@@ -1,3 +1,7 @@
+//! # Views
+//!
+//! This module contains all of the views of the application.
+
 use crate::{
     app::*,
     cache::*,

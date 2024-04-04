@@ -1,8 +1,10 @@
-use super::*;
-use crate::data::CrateResponse;
+use crate::{app::*, components::Search, data::CrateResponse};
+use implicit_clone::unsync::IString;
 use indexmap::IndexMap;
 use semver::Version;
+use std::sync::Arc;
 use web_sys::HtmlSelectElement;
+use yew::prelude::*;
 use yew_icons::{Icon as YewIcon, IconId};
 
 #[derive(Properties, PartialEq)]
@@ -150,23 +152,19 @@ fn SwitchIcon() -> Html {
 
 #[function_component]
 pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
-    let prop_versions: Vec<_> = props.info.versions.iter().map(|v| v.num.clone()).collect();
-
     let versions: IndexMap<IString, IString> = props
         .info
         .versions
         .iter()
-        .map(|version| (version, IString::from(version.num.to_string())))
-        .map(|(version, num)| {
+        .map(|version| {
+            let num = IString::from(version.num.to_string());
             if version.yanked {
                 (num.clone(), format!("{num} (yanked)").into())
             } else {
-                (num.clone(), num)
+                (num.clone(), num.clone())
             }
         })
         .collect();
-
-    let navigator = use_navigator();
 
     let switch = {
         let onchange = props.onchange.clone();

@@ -1,5 +1,7 @@
-use super::*;
+use crate::app::Route;
 use web_sys::HtmlInputElement;
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[function_component]
 fn SearchGlass() -> Html {

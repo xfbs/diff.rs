@@ -1,3 +1,8 @@
+//! # Application
+//!
+//! This module contains the root component of the application. The root component contains
+//! the routing logic, and renders the views depending on the current route.
+
 use crate::{
     version::{VersionId, VersionNamed},
     views::*,

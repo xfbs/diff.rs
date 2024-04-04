@@ -1,11 +1,13 @@
-use super::*;
 use crate::{
+    app::*,
+    components::{ComplexNavbar, Content, FileTree},
     data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
     version::VersionId,
 };
 use semver::Version;
 use similar::ChangeTag;
 use std::{rc::Rc, sync::Arc};
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {

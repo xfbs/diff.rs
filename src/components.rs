@@ -1,14 +1,12 @@
-use crate::app::*;
-use implicit_clone::unsync::{IArray, IString};
-use std::sync::Arc;
-use yew::prelude::*;
-use yewprint::*;
+//! # Shared components
+//!
+//! This module contains shared components.
 
-pub mod diff_view;
-pub mod file_tree;
-pub mod layout;
-pub mod navigation;
-pub mod non_ideal;
-pub mod search;
+mod diff_view;
+mod file_tree;
+mod layout;
+mod navigation;
+mod non_ideal;
+mod search;
 
 pub use self::{diff_view::*, file_tree::*, layout::*, navigation::*, non_ideal::*, search::*};
