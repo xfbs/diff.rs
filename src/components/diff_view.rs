@@ -11,7 +11,8 @@ use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceViewProps {
-    pub info: Arc<CrateResponse>,
+    pub src_info: Arc<CrateResponse>,
+    pub dst_info: Arc<CrateResponse>,
     pub old: Arc<CrateSource>,
     pub new: Arc<CrateSource>,
     pub path: String,
@@ -24,13 +25,15 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
     });
     let navigator = use_navigator().unwrap();
     let onselect = {
-        let name = props.info.krate.id.clone();
+        let src_name = props.src_info.krate.id.clone();
+        let dst_name = props.dst_info.krate.id.clone();
         let old: VersionId = props.old.version.num.clone().into();
         let new: VersionId = props.new.version.num.clone().into();
         let navigator = navigator.clone();
         move |path: String| {
             navigator.push(&Route::File {
-                name: name.clone(),
+                src_name: src_name.clone(),
+                dst_name: dst_name.clone(),
                 old: old.clone(),
                 new: new.clone(),
                 path,
@@ -40,17 +43,19 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
     html! {
         <>
         <ComplexNavbar
-            name={props.info.krate.id.clone()}
+            src_name={props.src_info.krate.id.clone()}
+            dst_name={props.dst_info.krate.id.clone()}
             old={props.old.version.num.clone()}
             new={props.new.version.num.clone()}
-            info={props.info.clone()}
+            src_info={props.src_info.clone()}
+            dst_info={props.dst_info.clone()}
             onchange={
-                let name = props.info.krate.id.clone();
                 let path = props.path.clone();
                 let navigator = navigator;
-                move |(old, new): (Version, Version)| {
+                move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                     navigator.push(&Route::File {
-                        name: name.clone(),
+                        src_name: src_name.clone(),
+                        dst_name: dst_name.clone(),
                         old: old.clone().into(),
                         new: new.clone().into(),
                         path: path.clone(),
