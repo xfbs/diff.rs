@@ -132,12 +132,14 @@ pub fn Select(props: &SelectProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct ComplexNavbarProps {
-    pub name: String,
+    pub src_name: String,
+    pub dst_name: String,
     pub old: Version,
     pub new: Version,
-    pub info: Arc<CrateResponse>,
+    pub src_info: Arc<CrateResponse>,
+    pub dst_info: Arc<CrateResponse>,
     #[prop_or_default]
-    pub onchange: Callback<(Version, Version)>,
+    pub onchange: Callback<((String, Version), (String, Version))>,
 }
 
 #[function_component]
@@ -152,26 +154,62 @@ fn SwitchIcon() -> Html {
 
 #[function_component]
 pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
-    let versions: IndexMap<IString, IString> = props
-        .info
-        .versions
-        .iter()
-        .map(|version| {
-            let num = IString::from(version.num.to_string());
-            if version.yanked {
-                (num.clone(), format!("{num} (yanked)").into())
-            } else {
-                (num.clone(), num.clone())
-            }
-        })
-        .collect();
+    let prepare_versions = |versions: &[crate::data::VersionInfo]| {
+        versions
+            .iter()
+            .map(|version| {
+                let num = IString::from(version.num.to_string());
+                if version.yanked {
+                    (num.clone(), format!("{num} (yanked)").into())
+                } else {
+                    (num.clone(), num.clone())
+                }
+            })
+            .collect()
+    };
+    let switched = use_state(|| false);
+
+    let (src_name, dst_name, old, new, src_info, dst_info) = if *switched {
+        (
+            &props.dst_name,
+            &props.src_name,
+            &props.new,
+            &props.old,
+            &props.dst_info,
+            &props.src_info,
+        )
+    } else {
+        (
+            &props.src_name,
+            &props.dst_name,
+            &props.old,
+            &props.new,
+            &props.src_info,
+            &props.dst_info,
+        )
+    };
+
+    let src_versions: IndexMap<IString, IString> = prepare_versions(&src_info.versions);
+    let dst_versions: IndexMap<IString, IString> = prepare_versions(&dst_info.versions);
 
     let switch = {
         let onchange = props.onchange.clone();
-        let versions = (props.new.clone(), props.old.clone());
-        move |_| {
+        let new_switched = !*switched;
+        let versions = if new_switched {
+            (
+                (dst_name.clone(), new.clone()),
+                (src_name.clone(), old.clone()),
+            )
+        } else {
+            (
+                (src_name.clone(), old.clone()),
+                (dst_name.clone(), new.clone()),
+            )
+        };
+        Callback::from(move |_| {
+            switched.set(new_switched);
             onchange.emit(versions.clone());
-        }
+        })
     };
 
     html! {
@@ -181,21 +219,23 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                     <Link<Route> to={Route::Home} classes="flex flex-row items-center"><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /><span>{ "diff.rs" }</span></Link<Route>></NavbarHeading>
                 <NavbarDivider />
                 <NavbarItem>
-                    <a href={format!("https://crates.io/crates/{}", props.name)} class="flex flex-row items-center">
+                    <a href={format!("https://crates.io/crates/{}", src_name)} class="flex flex-row items-center">
                         <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
                     </a>
-                    { props.name.clone() }
+                    { src_name.clone() }
                 </NavbarItem>
                 <NavbarItem>
                     <Select
-                        values={versions.clone()}
-                        selected={Some(props.old.to_string().into()) as Option<IString>}
+                        values={src_versions.clone()}
+                        selected={Some(old.to_string().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();
-                            let new = props.new.clone();
+                            let src_name = src_name.clone();
+                            let dst_name = dst_name.clone();
+                            let new = new.clone();
                             move |old: IString| {
                                 let old: Version = old.parse().unwrap();
-                                onchange.emit((old.clone(), new.clone()))
+                                onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
                             }
                         }
                     />
@@ -206,15 +246,23 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                     </span>
                 </NavbarItem>
                 <NavbarItem>
+                    <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
+                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                    </a>
+                    { dst_name.clone() }
+                </NavbarItem>
+                <NavbarItem>
                     <Select
-                        values={versions}
-                        selected={Some(props.new.to_string().into()) as Option<IString>}
+                        values={dst_versions}
+                        selected={Some(new.to_string().into()) as Option<IString>}
                         onchange={
                             let onchange = props.onchange.clone();
-                            let old = props.old.clone();
+                            let src_name = src_name.clone();
+                            let dst_name = dst_name.clone();
+                            let old = old.clone();
                             move |new: IString| {
                                 let new: Version = new.parse().unwrap();
-                                onchange.emit((old.clone(), new.clone()))
+                                onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
                             }
                         }
                     />

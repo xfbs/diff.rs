@@ -4,7 +4,8 @@ use semver::Version;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffProps {
-    pub name: String,
+    pub src_name: String,
+    pub dst_name: String,
     pub old: VersionId,
     pub new: VersionId,
     #[prop_or_default]
@@ -26,7 +27,8 @@ pub fn Diff(props: &DiffProps) -> Html {
     html! {
         <Suspense {fallback}>
             <CrateFetcher
-                name={props.name.clone()}
+                src_name={props.src_name.clone()}
+                dst_name={props.dst_name.clone()}
                 old={props.old.clone()}
                 new={props.new.clone()}
                 path={props.path.clone()}
@@ -37,15 +39,27 @@ pub fn Diff(props: &DiffProps) -> Html {
 
 #[function_component]
 pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
-    let info = use_future_with(props.name.clone(), |name| async move {
-        CRATE_RESPONSE_CACHE.fetch_cached(&name).await
-    })?;
+    let info = use_future_with(
+        (props.src_name.clone(), props.dst_name.clone()),
+        |names| async move {
+            (
+                CRATE_RESPONSE_CACHE.fetch_cached(&names.0).await,
+                CRATE_RESPONSE_CACHE.fetch_cached(&names.1).await,
+            )
+        },
+    )?;
 
     match &*info {
-        Ok(info) => Ok(html! {
-            <VersionResolver {info} old={props.old.clone()} new={props.new.clone()} path={props.path.clone()} />
+        (Ok(src_info), Ok(dst_info)) => Ok(html! {
+            <VersionResolver
+                {src_info}
+                {dst_info}
+                old={props.old.clone()}
+                new={props.new.clone()}
+                path={props.path.clone()}
+            />
         }),
-        Err(error) => Ok(html! {
+        (Err(error), _) | (_, Err(error)) => Ok(html! {
             <>
                 <SimpleNavbar />
                 <Content>
@@ -60,7 +74,8 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct VersionResolverProps {
-    pub info: Arc<CrateResponse>,
+    pub src_info: Arc<CrateResponse>,
+    pub dst_info: Arc<CrateResponse>,
     pub old: VersionId,
     pub new: VersionId,
     pub path: Option<String>,
@@ -69,12 +84,17 @@ pub struct VersionResolverProps {
 #[function_component]
 pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     // find krate version info
-    let old = props.info.version(props.old.clone());
-    let new = props.info.version(props.new.clone());
-
+    let old = props.src_info.version(props.old.clone());
+    let new = props.dst_info.version(props.new.clone());
     match (old, new) {
         (Some(old), Some(new)) => html! {
-            <SourceFetcher info={props.info.clone()} old={old.clone()} new={new.clone()} path={props.path.clone()} />
+            <SourceFetcher
+                src_info={props.src_info.clone()}
+                dst_info={props.dst_info.clone()}
+                old={old.clone()}
+                new={new.clone()}
+                path={props.path.clone()}
+            />
         },
         (None, _) => html! {
             <>
@@ -101,7 +121,8 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct SourceFetcherProps {
-    pub info: Arc<CrateResponse>,
+    pub src_info: Arc<CrateResponse>,
+    pub dst_info: Arc<CrateResponse>,
     pub old: VersionInfo,
     pub new: VersionInfo,
     pub path: Option<String>,
@@ -112,10 +133,12 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
     let fallback = html! {
         <>
         <ComplexNavbar
-            name={props.info.krate.id.clone()}
+            src_name={props.src_info.krate.id.clone()}
+            dst_name={props.dst_info.krate.id.clone()}
             old={props.old.num.clone()}
             new={props.new.num.clone()}
-            info={props.info.clone()}
+            src_info={props.src_info.clone()}
+            dst_info={props.dst_info.clone()}
         />
         <Center>
             <Loading title={"Loading crate"} status={"Loading crate source"} />
@@ -125,7 +148,8 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
     html! {
         <Suspense {fallback}>
             <SourceFetcherInner
-                info={props.info.clone()}
+                src_info={props.src_info.clone()}
+                dst_info={props.dst_info.clone()}
                 old={props.old.clone()}
                 new={props.new.clone()}
                 path={props.path.clone()}
@@ -153,16 +177,18 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
             return Ok(html! {
                 <>
                 <ComplexNavbar
-                    name={props.info.krate.id.clone()}
+                    src_name={props.src_info.krate.id.clone()}
+                    dst_name={props.dst_info.krate.id.clone()}
                     old={props.old.num.clone()}
                     new={props.new.num.clone()}
-                    info={props.info.clone()}
+                    src_info={props.src_info.clone()}
+                    dst_info={props.dst_info.clone()}
                     onchange={
-                        let name = props.info.krate.id.clone();
                         let path = props.path.clone();
-                        move |(old, new): (Version, Version)| {
+                        move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                             navigator.push(&Route::File {
-                                name: name.clone(),
+                                src_name: src_name.clone(),
+                                dst_name: dst_name.clone(),
                                 old: old.clone().into(),
                                 new: new.clone().into(),
                                 path: path.clone().unwrap_or_default(),
@@ -180,11 +206,13 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
         }
     };
 
+    dbg!(&props.path);
     let path = match &props.path {
         None => {
             return Ok(html! {
                 <Redirect<Route> to={Route::File {
-                    name: props.info.krate.id.clone(),
+                    src_name: props.src_info.krate.id.clone(),
+                    dst_name: props.dst_info.krate.id.clone(),
                     old: props.old.num.clone().into(),
                     new: props.new.num.clone().into(),
                     path: "Cargo.toml".into(),
@@ -196,7 +224,8 @@ pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
 
     Ok(html! {
         <SourceView
-            info={props.info.clone()}
+            src_info={props.src_info.clone()}
+            dst_info={props.dst_info.clone()}
             {old}
             {new}
             {path}

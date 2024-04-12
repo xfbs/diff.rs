@@ -221,8 +221,8 @@ impl VersionDiff {
         let left = left.into();
         let right = right.into();
         info!(
-            "Computing diff for {} version {} and {}",
-            left.version.krate, left.version.num, right.version.num
+            "Computing diff for {} version {} and {} version {}",
+            left.version.krate, left.version.num, right.version.krate, right.version.num
         );
 
         let mut files = BTreeMap::new();

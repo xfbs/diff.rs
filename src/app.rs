@@ -22,15 +22,23 @@ pub enum Route {
     #[at("/:name/")]
     Crate { name: String },
     #[at("/:name/:old/:new")]
-    Diff {
+    SingleSourceDiff {
         name: String,
         old: VersionId,
         new: VersionId,
     },
     #[at("/:name/:old/:new/*path")]
-    File {
+    SingleSourceFile {
         name: String,
         old: VersionId,
+        new: VersionId,
+        path: String,
+    },
+    #[at("/:src_name/:old/:dst_name/:new/*path")]
+    File {
+        src_name: String,
+        old: VersionId,
+        dst_name: String,
         new: VersionId,
         path: String,
     },
@@ -45,21 +53,31 @@ fn switch(route: Route) -> Html {
         Route::About => html! { <About /> },
         Route::Crate { name } => html! {
             <Diff
-                {name}
+                src_name={name.clone()}
+                dst_name={name}
                 old={VersionId::Named(VersionNamed::Previous)}
                 new={VersionId::Named(VersionNamed::Latest)}
             />
         },
-        Route::Diff { name, old, new } => html! {
-            <Diff {name} {old} {new} />
+        Route::SingleSourceDiff { name, old, new } => html! {
+            <Diff src_name={name.clone()} dst_name={name} {old} {new} />
         },
-        Route::File {
+        Route::SingleSourceFile {
             name,
             old,
             new,
             path,
         } => html! {
-            <Diff {name} {old} {new} {path} />
+            <Diff src_name={name.clone()} dst_name={name} {old} {new} {path} />
+        },
+        Route::File {
+            src_name,
+            old,
+            dst_name,
+            new,
+            path,
+        } => html! {
+            <Diff {src_name} {dst_name} {old} {new} {path} />
         },
         Route::NotFound => html! { <NotFound /> },
         Route::Search { krate } => html! { <Search search={krate} /> },
