@@ -31,7 +31,7 @@ pub struct NavbarGroupProps {
 #[function_component]
 pub fn NavbarGroup(props: &NavbarGroupProps) -> Html {
     html! {
-        <div class="flex flex-row flex-nowrap gap-6">
+        <div class="flex flex-row flex-wrap sm:flex-nowrap gap-6">
             { for props.children.iter() }
         </div>
     }
@@ -218,56 +218,58 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 <NavbarHeading>
                     <Link<Route> to={Route::Home} classes="flex flex-row items-center"><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /><span>{ "diff.rs" }</span></Link<Route>></NavbarHeading>
                 <NavbarDivider />
-                <NavbarItem>
-                    <a href={format!("https://crates.io/crates/{}", src_name)} class="flex flex-row items-center">
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
-                    </a>
-                    { src_name.clone() }
-                </NavbarItem>
-                <NavbarItem>
-                    <Select
-                        values={src_versions.clone()}
-                        selected={Some(old.to_string().into()) as Option<IString>}
-                        onchange={
-                            let onchange = props.onchange.clone();
-                            let src_name = src_name.clone();
-                            let dst_name = dst_name.clone();
-                            let new = new.clone();
-                            move |old: IString| {
-                                let old: Version = old.parse().unwrap();
-                                onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
+                <NavbarGroup>
+                    <NavbarItem>
+                        <a href={format!("https://crates.io/crates/{}", src_name)} class="flex flex-row items-center">
+                            <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                        </a>
+                        { src_name.clone() }
+                    </NavbarItem>
+                    <NavbarItem>
+                        <Select
+                            values={src_versions.clone()}
+                            selected={Some(old.to_string().into()) as Option<IString>}
+                            onchange={
+                                let onchange = props.onchange.clone();
+                                let src_name = src_name.clone();
+                                let dst_name = dst_name.clone();
+                                let new = new.clone();
+                                move |old: IString| {
+                                    let old: Version = old.parse().unwrap();
+                                    onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
+                                }
                             }
-                        }
-                    />
-                </NavbarItem>
-                <NavbarItem>
-                    <span class="cursor-pointer hover:rotate-180 transition delay-150 duration-300 ease-in-out" onclick={switch}>
-                        <SwitchIcon />
-                    </span>
-                </NavbarItem>
-                <NavbarItem>
-                    <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
-                    </a>
-                    { dst_name.clone() }
-                </NavbarItem>
-                <NavbarItem>
-                    <Select
-                        values={dst_versions}
-                        selected={Some(new.to_string().into()) as Option<IString>}
-                        onchange={
-                            let onchange = props.onchange.clone();
-                            let src_name = src_name.clone();
-                            let dst_name = dst_name.clone();
-                            let old = old.clone();
-                            move |new: IString| {
-                                let new: Version = new.parse().unwrap();
-                                onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
+                        />
+                    </NavbarItem>
+                    <NavbarItem>
+                        <span class="cursor-pointer hover:rotate-180 transition delay-150 duration-300 ease-in-out" onclick={switch}>
+                            <SwitchIcon />
+                        </span>
+                    </NavbarItem>
+                    <NavbarItem>
+                        <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
+                            <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                        </a>
+                        { dst_name.clone() }
+                    </NavbarItem>
+                    <NavbarItem>
+                        <Select
+                            values={dst_versions}
+                            selected={Some(new.to_string().into()) as Option<IString>}
+                            onchange={
+                                let onchange = props.onchange.clone();
+                                let src_name = src_name.clone();
+                                let dst_name = dst_name.clone();
+                                let old = old.clone();
+                                move |new: IString| {
+                                    let new: Version = new.parse().unwrap();
+                                    onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
+                                }
                             }
-                        }
-                    />
-                </NavbarItem>
-                <NavbarDivider />
+                        />
+                    </NavbarItem>
+                    <NavbarDivider />
+                </NavbarGroup>
             </NavbarGroup>
             <NavbarGroup>
                 <Search />
