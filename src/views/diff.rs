@@ -49,27 +49,39 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
         },
     )?;
 
-    match &*info {
-        (Ok(src_info), Ok(dst_info)) => Ok(html! {
-            <VersionResolver
-                {src_info}
-                {dst_info}
-                old={props.old.clone()}
-                new={props.new.clone()}
-                path={props.path.clone()}
-            />
-        }),
-        (Err(error), _) | (_, Err(error)) => Ok(html! {
-            <>
-                <SimpleNavbar />
-                <Content>
-                    <Center>
-                        <Error title={"Loading crate"} status={format!("Error: {error}")} />
-                    </Center>
-                </Content>
-            </>
-        }),
-    }
+    let errors = match &*info {
+        (Ok(src_info), Ok(dst_info)) => {
+            return Ok(html! {
+                <VersionResolver
+                    {src_info}
+                    {dst_info}
+                    old={props.old.clone()}
+                    new={props.new.clone()}
+                    path={props.path.clone()}
+                />
+            })
+        }
+        (Err(error), Ok(_)) => vec![(&props.src_name, error)],
+        (Ok(_), Err(error)) => vec![(&props.dst_name, error)],
+        (Err(src_error), Err(dst_error)) => {
+            vec![(&props.src_name, src_error), (&props.dst_name, dst_error)]
+        }
+    };
+    let errors = errors
+        .iter()
+        .map(|(name, error)| format!("{name} with {error}"))
+        .collect::<Vec<_>>()
+        .join(" and ");
+    Ok(html! {
+        <>
+            <SimpleNavbar />
+            <Content>
+                <Center>
+                    <Error title={"Loading crate"} status={format!("Error: {errors}")} />
+                </Center>
+            </Content>
+        </>
+    })
 }
 
 #[derive(Properties, PartialEq, Clone)]
