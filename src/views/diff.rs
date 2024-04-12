@@ -86,42 +86,37 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     // find krate version info
     let old = props.src_info.version(props.old.clone());
     let new = props.dst_info.version(props.new.clone());
-    match (old, new) {
-        (Some(old), Some(new)) => html! {
-            <SourceFetcher
-                src_info={props.src_info.clone()}
-                dst_info={props.dst_info.clone()}
-                old={old.clone()}
-                new={new.clone()}
-                path={props.path.clone()}
-            />
-        },
-        (None, _) => html! {
-            <>
-                <SimpleNavbar />
+    let errors = match (old, new) {
+        (Some(old), Some(new)) => {
+            return html! {
+                <SourceFetcher
+                    src_info={props.src_info.clone()}
+                    dst_info={props.dst_info.clone()}
+                    old={old.clone()}
+                    new={new.clone()}
+                    path={props.path.clone()}
+                />
+            }
+        }
+        // get invalid versions from props
+        (None, Some(_)) => vec![(&props.src_info, &props.old)],
+        (Some(_), None) => vec![(&props.dst_info, &props.new)],
+        (None, None) => vec![(&props.src_info, &props.old), (&props.dst_info, &props.new)],
+    };
+    let errors = errors
+        .iter()
+        .map(|(info, version)| format!("Error: veresion {version} of {} not found", info.krate.id))
+        .collect::<Vec<_>>()
+        .join(" and ");
+    html! {
+        <>
+            <SimpleNavbar />
                 <Content>
                     <Center>
-                        <Error
-                            title={"Resolving version"}
-                            status={format!("Error: version {:?} not found", &old)}
-                        />
-                    </Center>
-                </Content>
-            </>
-        },
-        (_, None) => html! {
-            <>
-                <SimpleNavbar />
-                <Content>
-                    <Center>
-                        <Error
-                            title={"Resolving version"}
-                            status={format!("Error: version {} not found", &props.new)}
-                        />
-                    </Center>
-                </Content>
-            </>
-        },
+                    <Error title={"Resolving version"} status={errors} />
+                </Center>
+            </Content>
+        </>
     }
 }
 
