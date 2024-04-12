@@ -21,6 +21,11 @@ pub enum Route {
     Search { krate: String },
     #[at("/:name/")]
     Crate { name: String },
+    #[at("/:src_name/:dst_name")]
+    Crates {
+        src_name: String,
+        dst_name: String,
+    },
     #[at("/:name/:old/:new")]
     SingleSourceDiff {
         name: String,
@@ -56,6 +61,14 @@ fn switch(route: Route) -> Html {
                 src_name={name.clone()}
                 dst_name={name}
                 old={VersionId::Named(VersionNamed::Previous)}
+                new={VersionId::Named(VersionNamed::Latest)}
+            />
+        },
+        Route::Crates { src_name, dst_name } => html! {
+            <Diff
+                src_name={src_name}
+                dst_name={dst_name}
+                old={VersionId::Named(VersionNamed::Latest)}
                 new={VersionId::Named(VersionNamed::Latest)}
             />
         },
