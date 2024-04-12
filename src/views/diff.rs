@@ -98,22 +98,28 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
         },
         (None, _) => html! {
             <>
-            <SimpleNavbar />
-            <Content>
-            <Center>
-            <Error title={"Resolving version"} status={format!("Error: version {old:?} not found")} />
-            </Center>
-            </Content>
+                <SimpleNavbar />
+                <Content>
+                    <Center>
+                        <Error
+                            title={"Resolving version"}
+                            status={format!("Error: version {:?} not found", &old)}
+                        />
+                    </Center>
+                </Content>
             </>
         },
         (_, None) => html! {
             <>
-            <SimpleNavbar />
-            <Content>
-            <Center>
-            <Error title={"Resolving version"} status={format!("Error: version {new:?} not found")} />
-            </Center>
-            </Content>
+                <SimpleNavbar />
+                <Content>
+                    <Center>
+                        <Error
+                            title={"Resolving version"}
+                            status={format!("Error: version {} not found", &props.new)}
+                        />
+                    </Center>
+                </Content>
             </>
         },
     }
