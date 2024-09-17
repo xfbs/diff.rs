@@ -19,6 +19,17 @@ pub enum Route {
     About,
     #[at("/search/:krate")]
     Search { krate: String },
+    #[at("/browse/:name/:version")]
+    Browse {
+        name: String,
+        version: VersionId,
+    },
+    #[at("/browse/:name/:version/*path")]
+    BrowseFile {
+        name: String,
+        version: VersionId,
+        path: String,
+    },
     #[at("/:name/")]
     Crate { name: String },
     #[at("/:src_name/:dst_name")]
@@ -56,6 +67,23 @@ fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <Home /> },
         Route::About => html! { <About /> },
+        Route::Browse { name, version } => html! {
+            <Diff
+                src_name={name.clone()}
+                dst_name={name}
+                old={version.clone()}
+                new={version}
+            />
+        },
+        Route::BrowseFile { name, version, path } => html! {
+            <Diff
+                src_name={name.clone()}
+                dst_name={name}
+                old={version.clone()}
+                new={version}
+                {path}
+            />
+        },
         Route::Crate { name } => html! {
             <Diff
                 src_name={name.clone()}
