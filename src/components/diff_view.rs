@@ -103,6 +103,7 @@ pub struct DiffViewProps {
 pub fn DiffView(props: &DiffViewProps) -> Html {
     let empty = FileDiff::default();
     let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
+    let is_identical_version = props.diff.left.version == props.diff.right.version;
 
     // if this file does not exist, this will be none. so we use this trick to convert the none
     // case into an empty iterator, meaning that it will simply be rendered as an empty file.
@@ -142,7 +143,9 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
         stack.push(DiffGroupInfo {
             group: changes.by_ref().cloned().collect(),
             range: cursor..file_diff.changes.len(),
-            in_context: false,
+            // When comparing a version of the crate to itself, this group will
+            // always contain the full text of the file. Don't collapse it.
+            in_context: is_identical_version,
         });
     }
 
