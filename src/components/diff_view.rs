@@ -2,11 +2,14 @@ use crate::{
     app::*,
     components::{ComplexNavbar, Content, FileTree},
     data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
+    syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
     version::VersionId,
 };
+use log::*;
 use semver::Version;
 use similar::ChangeTag;
 use std::{rc::Rc, sync::Arc};
+use syntect::highlighting::Style;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -86,7 +89,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
 /// Contains information about contiguous changes
 struct DiffGroupInfo {
     /// The actual changes
-    group: Vec<(ChangeTag, bytes::Bytes)>,
+    group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     /// What range of lines the group covers (used as a Yew list key)
     range: std::ops::Range<usize>,
     /// Whether the group contains an actual diff (and therefore shows some context)
@@ -104,9 +107,20 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     let empty = FileDiff::default();
     let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
 
-    // if this file does not exist, this will be none. so we use this trick to convert the none
-    // case into an empty iterator, meaning that it will simply be rendered as an empty file.
-    let mut changes = file_diff.changes.iter();
+    // Determine which syntax should be used for this file. It will be based
+    // first on the file's name, then the file's extension, then the first line.
+    let syntax = infer_syntax_for_file(
+        &props.path,
+        file_diff
+            .changes
+            .iter()
+            .find(|(tag, _)| *tag != ChangeTag::Delete)
+            .and_then(|(_, line)| std::str::from_utf8(line).ok()),
+    );
+    info!("Highlighting {} as {}", syntax.name, props.path);
+
+    // Apply highlighting to every change in the file.
+    let mut changes = highlight_changes(syntax, &file_diff.changes).into_iter();
     let ranges = file_diff.context_ranges.iter();
 
     // Group contiguous lines by whether they contain an actual diff +/- some context buffer.
@@ -116,11 +130,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
         // out of context lines
         if next_range.start != 0 {
             stack.push(DiffGroupInfo {
-                group: changes
-                    .by_ref()
-                    .take(next_range.start - cursor)
-                    .cloned()
-                    .collect(),
+                group: changes.by_ref().take(next_range.start - cursor).collect(),
                 range: cursor..next_range.start,
                 in_context: false,
             });
@@ -130,7 +140,6 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
             group: changes
                 .by_ref()
                 .take(next_range.end - next_range.start)
-                .cloned()
                 .collect(),
             range: next_range.clone(),
             in_context: true,
@@ -140,7 +149,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     if changes.len() > 0 {
         // Trailing unchanged lines at the end of a file
         stack.push(DiffGroupInfo {
-            group: changes.by_ref().cloned().collect(),
+            group: changes.by_ref().collect(),
             range: cursor..file_diff.changes.len(),
             in_context: false,
         });
@@ -175,7 +184,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct DiffLineGroupProps {
-    group: Vec<(ChangeTag, bytes::Bytes)>,
+    group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     in_context: bool,
     group_start_index: usize,
     padding: usize,
@@ -216,21 +225,27 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
             {
                 props.group.iter().enumerate().map(|(index, (tag, change))| {
                     let overall_index = group_start_index + index;
-                    let (sign, color) = match tag {
-                        ChangeTag::Delete => ("-", "red"),
-                        ChangeTag::Insert => ("+", "green"),
+                    let (sign, bg_color) = match tag {
+                        ChangeTag::Delete => ("-", "#ffebe9"),
+                        ChangeTag::Insert => ("+", "#dafbe1"),
                         ChangeTag::Equal => (" ", "default"),
                     };
-                    let contents = String::from_utf8_lossy(&change[..]);
                     html! {
-                        <span style={format!("color: {color};")}>
+                        <div style={format!("background-color:{bg_color}")}>
                             {
-                                format!(
-                                    "{overall_index:>padding$} {sign} {}",
-                                    contents
-                                )
+                                format!("{overall_index:>padding$} {sign} ")
                             }
-                        </span>
+                            {
+                                change.iter().map(|(style, text)| {
+                                    let style = syntect_style_to_css(style);
+                                    let contents = String::from_utf8_lossy(&text[..]);
+                                    html! {
+                                        <span style={style}>{contents}</span>
+                                    }
+                                })
+                                .collect::<Html>()
+                            }
+                        </div>
                     }
                 }).collect::<Html>()
             }
