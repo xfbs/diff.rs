@@ -117,7 +117,7 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
     };
     let errors = errors
         .iter()
-        .map(|(info, version)| format!("Error: veresion {version} of {} not found", info.krate.id))
+        .map(|(info, version)| format!("Error: version {version} of {} not found", info.krate.id))
         .collect::<Vec<_>>()
         .join(" and ");
     html! {
