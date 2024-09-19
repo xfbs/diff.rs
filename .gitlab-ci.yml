@@ -36,7 +36,7 @@ build:
   stage: build
   image: rust
   variables:
-    TRUNK_VERSION: 0.19.1
+    TRUNK_VERSION: 0.20.3
   before_script:
     - rustup target add wasm32-unknown-unknown
     - wget -qO- https://github.com/thedodd/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
@@ -50,18 +50,14 @@ build:
 # the "build" job and produces a folder containing everything that needs to be
 # statically hosted.
 #
-# The way GitLab pages works is that when you have a CI job named "pages",
-# whatever this job produces will be statically hosted, so this is all that is
-# needed to deploy diff.rs.
-#
 # It compresses everything in the dist/ folder with brotli and gzip, because
 # GitLab pages has a feature where it will serve pre-compressed content if you
 # compress it like this. that means the page loads faster.
 #
-# Only thing we have to do is add a redirects file: because this is a
-# single-page app, we basically want every path to resolve to the index.html
-# (otherwise you get a 404 if you request diff.rs/serde, because there is no
-# actual file or folder named "serde").
+# we also have to do is add a redirects file: because this is a single-page
+# app, we want every path to resolve to the index.html (otherwise you get a 404
+# if you request diff.rs/serde, because there is no actual file or folder named
+# "serde").
 pages:
   stage: publish
   image: alpine
