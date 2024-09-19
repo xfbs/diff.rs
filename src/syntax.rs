@@ -23,7 +23,7 @@ lazy_static::lazy_static! {
 pub fn infer_syntax_for_file(path: &str, first_line: Option<&str>) -> &'static SyntaxReference {
     // Determine which syntax should be used for this file. It will be based
     // first on the file's name, then the file's extension, then the first line.
-    let (_, file_name) = path.rsplit_once('/').unwrap_or(("", &path[..]));
+    let (_, file_name) = path.rsplit_once('/').unwrap_or(("", path));
     let (_, extension) = file_name.rsplit_once('.').unwrap_or(("", file_name));
     SYNTAX_SET
         .find_syntax_by_extension(file_name)
@@ -44,7 +44,7 @@ fn highlight_bytes_line(
     }
 
     let line = std::str::from_utf8(&bytes[..]).ok()?;
-    let styles = highlight_lines.highlight_line(&line, &SYNTAX_SET).ok()?;
+    let styles = highlight_lines.highlight_line(line, &SYNTAX_SET).ok()?;
 
     // Map each chunk back to the bytes slice to avoid unnecessary copies.
     Some(
