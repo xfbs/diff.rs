@@ -20,10 +20,7 @@ pub enum Route {
     #[at("/search/:krate")]
     Search { krate: String },
     #[at("/browse/:name/:version")]
-    Browse {
-        name: String,
-        version: VersionId,
-    },
+    Browse { name: String, version: VersionId },
     #[at("/browse/:name/:version/*path")]
     BrowseFile {
         name: String,
@@ -33,10 +30,7 @@ pub enum Route {
     #[at("/:name/")]
     Crate { name: String },
     #[at("/:src_name/:dst_name")]
-    Crates {
-        src_name: String,
-        dst_name: String,
-    },
+    Crates { src_name: String, dst_name: String },
     #[at("/:name/:old/:new")]
     SingleSourceDiff {
         name: String,
@@ -75,7 +69,11 @@ fn switch(route: Route) -> Html {
                 new={version}
             />
         },
-        Route::BrowseFile { name, version, path } => html! {
+        Route::BrowseFile {
+            name,
+            version,
+            path,
+        } => html! {
             <Diff
                 src_name={name.clone()}
                 dst_name={name}
