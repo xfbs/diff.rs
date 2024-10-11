@@ -1,4 +1,4 @@
-use crate::{app::*, components::Search, data::CrateResponse};
+use crate::{components::Search, data::CrateResponse, *};
 use implicit_clone::unsync::IString;
 use indexmap::IndexMap;
 use semver::Version;

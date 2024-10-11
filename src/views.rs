@@ -3,10 +3,10 @@
 //! This module contains all of the views of the application.
 
 use crate::{
-    app::*,
     cache::*,
     components::*,
     data::{CrateResponse, VersionInfo},
+    *,
 };
 use std::sync::Arc;
 use yew::{prelude::*, suspense::*};

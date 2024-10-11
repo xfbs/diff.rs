@@ -1,9 +1,9 @@
 use crate::{
-    app::*,
     components::{ComplexNavbar, Content, FileTree},
     data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
     syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
     version::VersionId,
+    *,
 };
 use log::*;
 use semver::Version;

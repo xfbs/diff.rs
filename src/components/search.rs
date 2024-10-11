@@ -1,6 +1,6 @@
 use crate::{
-    app::Route,
     data::{CrateDetail, SearchResponse},
+    Route,
 };
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
