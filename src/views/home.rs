@@ -21,6 +21,7 @@ fn Logo() -> Html {
     }
 }
 
+/// Home page, shows search bar.
 #[function_component]
 pub fn Home() -> Html {
     let navigator = use_navigator().unwrap();

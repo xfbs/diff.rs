@@ -1,6 +1,8 @@
 //! # Shared components
 //!
-//! This module contains shared components.
+//! This module contains shared components. These are components which are shared between multiple
+//! views. Components which are only used by a single view can be kept inside the view's definition
+//! itself, unless they are generic to too complex.
 
 mod diff_view;
 mod file_tree;

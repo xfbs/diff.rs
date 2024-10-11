@@ -1,5 +1,6 @@
 use super::*;
 
+/// Not found view, shows generic error.
 #[function_component]
 pub fn NotFound() -> Html {
     html! {

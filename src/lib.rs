@@ -26,7 +26,7 @@ pub type Link<R = Route> = yew_router::components::Link<R>;
 
 /// Application routes.
 ///
-/// This struct declares all valid routes in the app, and has a [switch()] method to render the
+/// This struct declares all valid routes in the app, and has a [render()](Self::render) method to render the
 /// appropriate view.
 ///
 /// The default route for `/:name` is to render a crate. Therefore, when adding new routes, one

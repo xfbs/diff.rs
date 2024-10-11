@@ -14,6 +14,7 @@ fn Logo() -> Html {
     }
 }
 
+/// Search view, shows search results.
 #[function_component]
 pub fn Search(props: &SearchProps) -> Html {
     let state = use_debounce_state(String::new, 500);
@@ -26,6 +27,7 @@ pub fn Search(props: &SearchProps) -> Html {
             navigator.push(&Route::Search { krate: input });
         }
     };
+
     html! {
         <div class="flex flex-col min-h-screen">
             <div class="flex-1">

@@ -3,6 +3,7 @@ use crate::version::VersionId;
 use semver::Version;
 use yew_router::prelude::*;
 
+/// Props for which file to show.
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffProps {
     pub src_name: String,
@@ -13,6 +14,7 @@ pub struct DiffProps {
     pub path: Option<String>,
 }
 
+/// Show diff of a file change between two crate versions.
 #[function_component]
 pub fn Diff(props: &DiffProps) -> Html {
     let fallback = html! {
@@ -39,7 +41,7 @@ pub fn Diff(props: &DiffProps) -> Html {
 }
 
 #[function_component]
-pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
+fn CrateFetcher(props: &DiffProps) -> HtmlResult {
     let info = use_future_with(
         (props.src_name.clone(), props.dst_name.clone()),
         |names| async move {
@@ -86,16 +88,16 @@ pub fn CrateFetcher(props: &DiffProps) -> HtmlResult {
 }
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct VersionResolverProps {
-    pub src_info: Arc<CrateResponse>,
-    pub dst_info: Arc<CrateResponse>,
-    pub old: VersionId,
-    pub new: VersionId,
-    pub path: Option<String>,
+struct VersionResolverProps {
+    src_info: Arc<CrateResponse>,
+    dst_info: Arc<CrateResponse>,
+    old: VersionId,
+    new: VersionId,
+    path: Option<String>,
 }
 
 #[function_component]
-pub fn VersionResolver(props: &VersionResolverProps) -> Html {
+fn VersionResolver(props: &VersionResolverProps) -> Html {
     // find krate version info
     let old = props.src_info.version(props.old.clone());
     let new = props.dst_info.version(props.new.clone());
@@ -134,16 +136,16 @@ pub fn VersionResolver(props: &VersionResolverProps) -> Html {
 }
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct SourceFetcherProps {
-    pub src_info: Arc<CrateResponse>,
-    pub dst_info: Arc<CrateResponse>,
-    pub old: VersionInfo,
-    pub new: VersionInfo,
-    pub path: Option<String>,
+struct SourceFetcherProps {
+    src_info: Arc<CrateResponse>,
+    dst_info: Arc<CrateResponse>,
+    old: VersionInfo,
+    new: VersionInfo,
+    path: Option<String>,
 }
 
 #[function_component]
-pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
+fn SourceFetcher(props: &SourceFetcherProps) -> Html {
     let fallback = html! {
         <>
         <ComplexNavbar
@@ -173,7 +175,7 @@ pub fn SourceFetcher(props: &SourceFetcherProps) -> Html {
 }
 
 #[function_component]
-pub fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
+fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
     // fetch old version source
     let old = use_future_with(props.old.clone(), |version| async move {
         CRATE_SOURCE_CACHE.fetch_cached(&version).await

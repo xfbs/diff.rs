@@ -1,6 +1,9 @@
-//! # Views
+//! # Application views
 //!
-//! This module contains all of the views of the application.
+//! This module contains all of the views of the application. Views are pages that
+//! can be rendered (selected via the active route). Any components which are used
+//! by more than one view (or are sufficiently complex) should go into the `components`
+//! module, which contains components shared between views.
 
 use crate::{
     cache::*,
@@ -17,4 +20,4 @@ mod home;
 mod not_found;
 mod search;
 
-pub use self::{about::About, diff::Diff, home::Home, not_found::NotFound, search::Search};
+pub use self::{about::*, diff::*, home::Home, not_found::NotFound, search::Search};

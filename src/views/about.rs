@@ -1,5 +1,6 @@
 use super::*;
 
+/// About page, showing background information on this project.
 #[function_component]
 pub fn About() -> Html {
     html! {

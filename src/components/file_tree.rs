@@ -71,7 +71,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     }
 }
 
-pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
+fn build_tree(diff: &VersionDiff) -> TreeData<String> {
     let mut tree = TreeBuilder::new().build();
     let root = tree
         .insert(
@@ -146,7 +146,7 @@ pub fn build_tree(diff: &VersionDiff) -> TreeData<String> {
     tree.into()
 }
 
-pub fn clear_selected<T>(tree: &mut TreeData<T>) -> Result<()> {
+fn clear_selected<T>(tree: &mut TreeData<T>) -> Result<()> {
     let mut tree = tree.borrow_mut();
     let node_ids: Vec<NodeId> = tree
         .traverse_post_order_ids(tree.root_node_id().unwrap())?
@@ -158,7 +158,7 @@ pub fn clear_selected<T>(tree: &mut TreeData<T>) -> Result<()> {
     Ok(())
 }
 
-pub fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
+fn mark_expand(tree: &mut TreeData<String>, path: &str) -> Result<()> {
     let mut tree = tree.borrow_mut();
     let mut current: NodeId = tree.root_node_id().unwrap().clone();
 
