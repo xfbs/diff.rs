@@ -6,9 +6,12 @@
 
 mod diff_view;
 mod file_tree;
+mod footer;
 mod layout;
 mod navigation;
 mod non_ideal;
 mod search;
 
-pub use self::{diff_view::*, file_tree::*, layout::*, navigation::*, non_ideal::*, search::*};
+pub use self::{
+    diff_view::*, file_tree::*, footer::*, layout::*, navigation::*, non_ideal::*, search::*,
+};

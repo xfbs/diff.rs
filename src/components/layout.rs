@@ -23,12 +23,13 @@ pub struct ContentProps {
 #[function_component]
 pub fn Content(props: &ContentProps) -> Html {
     html! {
-        <div>
+        <div class="grow">
             { for props.children.iter() }
         </div>
     }
 }
 
+/*
 #[function_component]
 pub fn Footer(props: &ContentProps) -> Html {
     html! {
@@ -37,3 +38,4 @@ pub fn Footer(props: &ContentProps) -> Html {
         </footer>
     }
 }
+*/
