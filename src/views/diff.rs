@@ -239,12 +239,14 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
     };
 
     Ok(html! {
-        <SourceView
-            src_info={props.src_info.clone()}
-            dst_info={props.dst_info.clone()}
-            {old}
-            {new}
-            {path}
-        />
+        <div class="bg-white">
+            <SourceView
+                src_info={props.src_info.clone()}
+                dst_info={props.dst_info.clone()}
+                {old}
+                {new}
+                {path}
+            />
+        </div>
     })
 }

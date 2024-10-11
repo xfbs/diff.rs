@@ -35,6 +35,11 @@ pub fn SearchBar(props: &SearchBarProps) -> Html {
         }
     };
 
+    // prevent default action on form submission (page reload)
+    let onsubmit = |event: SubmitEvent| {
+        event.prevent_default();
+    };
+
     // set focus
     let input = use_node_ref();
     use_effect_once({
@@ -48,7 +53,7 @@ pub fn SearchBar(props: &SearchBarProps) -> Html {
     });
 
     html! {
-        <form class="max-w-xl mx-auto p-4" onsubmit={|_| ()}>
+        <form class="max-w-xl mx-auto p-4" {onsubmit}>
             <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">{"Search"}</label>
             <div class="relative">
                 <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">

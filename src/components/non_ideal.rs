@@ -10,12 +10,12 @@ pub struct ErrorProps {
 #[function_component]
 pub fn Error(props: &ErrorProps) -> Html {
     html! {
-        <div class="m-auto text-center">
-            <div class="" style="font-size: 48px; line-height: 48px;">
+        <div class="m-auto text-center dark:text-gray-100">
+            <div class="p-2" style="font-size: 48px; line-height: 48px;">
                 <Icon icon={Icon::Error} intent={Intent::Danger} size={48} />
             </div>
             <div class="">
-                <h4 class="font-bold">{ &props.title }</h4>
+                <h4 class="font-bold p-2">{ &props.title }</h4>
                 <div>{ &props.status }</div>
             </div>
         </div>
@@ -31,12 +31,12 @@ pub struct LoadingProps {
 #[function_component]
 pub fn Loading(props: &LoadingProps) -> Html {
     html! {
-        <div class="m-auto text-center">
-            <div class="" style="font-size: 48px; line-height: 48px;">
+        <div class="m-auto text-center dark:text-gray-100">
+            <div class="p-2" style="font-size: 48px; line-height: 48px;">
                 <Spinner size={48.0} />
             </div>
             <div class="">
-                <h4 class="font-bold">{ &props.title }</h4>
+                <h4 class="font-bold p-2">{ &props.title }</h4>
                 <div>{ &props.status }</div>
             </div>
         </div>

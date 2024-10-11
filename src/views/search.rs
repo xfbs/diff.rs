@@ -10,7 +10,7 @@ pub struct SearchProps {
 #[function_component]
 fn Logo() -> Html {
     html! {
-        <h1 class="text-center text-3xl font-bold my-12">{ "diff.rs" }</h1>
+        <h1 class="text-center text-3xl font-bold my-12 dark:text-white">{ "diff.rs" }</h1>
     }
 }
 
