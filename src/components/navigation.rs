@@ -71,15 +71,15 @@ pub fn SimpleNavbar() -> Html {
         <Navbar>
             <NavbarGroup>
                 <NavbarHeading>
-                    <Link<Route> to={Route::Home} classes="flex flex-row items-center">
+                    <Link to={Route::Home} classes="flex flex-row items-center">
                         <YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} />
                         { "diff.rs" }
-                    </Link<Route>>
+                    </Link>
                 </NavbarHeading>
                 <NavbarItem>
-                    <Link<Route> to={Route::About}>
+                    <Link to={Route::About}>
                         {"About"}
-                    </Link<Route>>
+                    </Link>
                 </NavbarItem>
             </NavbarGroup>
             <NavbarGroup>
@@ -216,7 +216,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
         <Navbar>
             <NavbarGroup>
                 <NavbarHeading>
-                    <Link<Route> to={Route::Home} classes="flex flex-row items-center"><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /><span>{ "diff.rs" }</span></Link<Route>></NavbarHeading>
+                    <Link to={Route::Home} classes="flex flex-row items-center"><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /><span>{ "diff.rs" }</span></Link></NavbarHeading>
                 <NavbarDivider />
                 <NavbarGroup>
                     <NavbarItem>

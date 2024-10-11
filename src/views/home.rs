@@ -1,4 +1,5 @@
 use super::*;
+use yew_router::prelude::*;
 
 #[function_component]
 fn Footer() -> Html {

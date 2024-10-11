@@ -6,7 +6,7 @@ use crate::{
     cache::*,
     components::*,
     data::{CrateResponse, VersionInfo},
-    *,
+    Link, Route,
 };
 use std::sync::Arc;
 use yew::{prelude::*, suspense::*};

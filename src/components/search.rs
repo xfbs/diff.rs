@@ -1,6 +1,6 @@
 use crate::{
     data::{CrateDetail, SearchResponse},
-    Route,
+    Link, Route,
 };
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
@@ -151,9 +151,9 @@ struct CardProps {
 #[function_component]
 fn Card(props: &CardProps) -> Html {
     html! {
-        <Link<Route> to={Route::Crate { name: props.details.id.clone() }} classes="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+        <Link to={Route::Crate { name: props.details.id.clone() }} classes="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
             <h5 class="mb-2 mt-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{&props.details.id}{" "}<span class="text-gray-600">{"v"}{&props.details.max_version}</span></h5>
             <p class="font-normal text-gray-700 dark:text-gray-400">{&props.details.description}</p>
-        </Link<Route>>
+        </Link>
     }
 }

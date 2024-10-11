@@ -1,5 +1,6 @@
 use super::*;
 use yew_hooks::prelude::*;
+use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct SearchProps {

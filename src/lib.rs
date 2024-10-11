@@ -21,6 +21,9 @@ use crate::{
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+/// Link component which uses this crate's [Route].
+pub type Link<R = Route> = yew_router::components::Link<R>;
+
 /// Application routes.
 ///
 /// This struct declares all valid routes in the app, and has a [switch()] method to render the

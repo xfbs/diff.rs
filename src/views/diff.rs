@@ -1,6 +1,7 @@
 use super::*;
 use crate::version::VersionId;
 use semver::Version;
+use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffProps {
