@@ -14,7 +14,7 @@ pub fn Home() -> Html {
     let navigator = use_navigator().unwrap();
     let onchange = move |input: String| {
         if !input.is_empty() {
-            navigator.push(&Route::Search { krate: input });
+            navigator.push(&Route::Search { query: input });
         }
     };
     html! {

@@ -24,7 +24,7 @@ pub fn Search(props: &SearchProps) -> Html {
         if input.is_empty() {
             navigator.push(&Route::Home);
         } else {
-            navigator.push(&Route::Search { krate: input });
+            navigator.push(&Route::Search { query: input });
         }
     };
 

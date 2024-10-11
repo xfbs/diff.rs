@@ -203,10 +203,10 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                         let path = props.path.clone();
                         move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                             navigator.push(&Route::File {
-                                src_name: src_name.clone(),
-                                dst_name: dst_name.clone(),
-                                old: old.clone().into(),
-                                new: new.clone().into(),
+                                old_krate: src_name.clone(),
+                                new_krate: dst_name.clone(),
+                                old_version: old.clone().into(),
+                                new_version: new.clone().into(),
                                 path: path.clone().unwrap_or_default(),
                             });
                         }
@@ -227,10 +227,10 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
         None => {
             return Ok(html! {
                 <Redirect<Route> to={Route::File {
-                    src_name: props.src_info.krate.id.clone(),
-                    dst_name: props.dst_info.krate.id.clone(),
-                    old: props.old.num.clone().into(),
-                    new: props.new.num.clone().into(),
+                    old_krate: props.src_info.krate.id.clone(),
+                    new_krate: props.dst_info.krate.id.clone(),
+                    old_version: props.old.num.clone().into(),
+                    new_version: props.new.num.clone().into(),
                     path: "Cargo.toml".into(),
                 }} />
             })

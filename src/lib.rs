@@ -43,53 +43,56 @@ pub enum Route {
     About,
 
     /// Search view, shows search results.
-    #[at("/search/:krate")]
-    Search { krate: String },
+    #[at("/search/:query")]
+    Search { query: String },
 
-    /// Browese view, will load crate source and redirect to default file.
-    #[at("/browse/:name/:version")]
-    Browse { name: String, version: VersionId },
+    /// Browse view, will load crate source and redirect to default file.
+    #[at("/browse/:krate/:version")]
+    Browse { krate: String, version: VersionId },
 
     /// File browse view.
-    #[at("/browse/:name/:version/*path")]
+    #[at("/browse/:krate/:version/*path")]
     BrowseFile {
-        name: String,
+        krate: String,
         version: VersionId,
         path: String,
     },
 
     /// Crate view, will make request to get most recent version and redirect.
-    #[at("/:name/")]
-    Crate { name: String },
+    #[at("/:krate/")]
+    Crate { krate: String },
 
     /// Crates view, allows for diffing two crates.
-    #[at("/:src_name/:dst_name")]
-    Crates { src_name: String, dst_name: String },
-
-    /// File diff view between `old` and `new` versions.
-    #[at("/:name/:old/:new")]
-    SingleSourceDiff {
-        name: String,
-        old: VersionId,
-        new: VersionId,
+    #[at("/:old_krate/:new_krate")]
+    Crates {
+        old_krate: String,
+        new_krate: String,
     },
 
     /// File diff view between `old` and `new` versions.
-    #[at("/:name/:old/:new/*path")]
+    #[at("/:krate/:old_version/:new_version")]
+    SingleSourceDiff {
+        krate: String,
+        old_version: VersionId,
+        new_version: VersionId,
+    },
+
+    /// File diff view between `old` and `new` versions.
+    #[at("/:krate/:old_version/:new_version/*path")]
     SingleSourceFile {
-        name: String,
-        old: VersionId,
-        new: VersionId,
+        krate: String,
+        old_version: VersionId,
+        new_version: VersionId,
         path: String,
     },
 
     /// File diff view, render differences in the file path between the crate versions.
-    #[at("/:src_name/:old/:dst_name/:new/*path")]
+    #[at("/:old_krate/:old_version/:new_krate/:new_version/*path")]
     File {
-        src_name: String,
-        old: VersionId,
-        dst_name: String,
-        new: VersionId,
+        old_krate: String,
+        old_version: VersionId,
+        new_krate: String,
+        new_version: VersionId,
         path: String,
     },
 
@@ -105,65 +108,72 @@ impl Route {
         match route {
             Route::Home => html! { <Home /> },
             Route::About => html! { <About /> },
-            Route::Browse { name, version } => html! {
+            Route::Browse { krate, version } => html! {
                 <Diff
-                    src_name={name.clone()}
-                    dst_name={name}
+                    src_name={krate.clone()}
+                    dst_name={krate}
                     old={version.clone()}
                     new={version}
                 />
             },
             Route::BrowseFile {
-                name,
+                krate,
                 version,
                 path,
             } => html! {
                 <Diff
-                    src_name={name.clone()}
-                    dst_name={name}
+                    src_name={krate.clone()}
+                    dst_name={krate}
                     old={version.clone()}
                     new={version}
                     {path}
                 />
             },
-            Route::Crate { name } => html! {
+            Route::Crate { krate } => html! {
                 <Diff
-                    src_name={name.clone()}
-                    dst_name={name}
+                    src_name={krate.clone()}
+                    dst_name={krate}
                     old={VersionId::Named(VersionNamed::Previous)}
                     new={VersionId::Named(VersionNamed::Latest)}
                 />
             },
-            Route::Crates { src_name, dst_name } => html! {
+            Route::Crates {
+                old_krate,
+                new_krate,
+            } => html! {
                 <Diff
-                    src_name={src_name}
-                    dst_name={dst_name}
+                    src_name={old_krate}
+                    dst_name={new_krate}
                     old={VersionId::Named(VersionNamed::Latest)}
                     new={VersionId::Named(VersionNamed::Latest)}
                 />
             },
-            Route::SingleSourceDiff { name, old, new } => html! {
-                <Diff src_name={name.clone()} dst_name={name} {old} {new} />
+            Route::SingleSourceDiff {
+                krate,
+                old_version,
+                new_version,
+            } => html! {
+                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} />
             },
             Route::SingleSourceFile {
-                name,
-                old,
-                new,
+                krate,
+                old_version,
+                new_version,
                 path,
             } => html! {
-                <Diff src_name={name.clone()} dst_name={name} {old} {new} {path} />
+                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} {path} />
             },
             Route::File {
-                src_name,
-                old,
-                dst_name,
-                new,
+                old_krate,
+                old_version,
+                new_krate,
+                new_version,
                 path,
             } => html! {
-                <Diff {src_name} {dst_name} {old} {new} {path} />
+                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
             },
             Route::NotFound => html! { <NotFound /> },
-            Route::Search { krate } => html! { <Search search={krate} /> },
+            Route::Search { query } => html! { <Search search={query} /> },
         }
     }
 }

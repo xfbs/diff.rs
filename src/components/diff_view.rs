@@ -35,10 +35,10 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         let navigator = navigator.clone();
         move |path: String| {
             navigator.push(&Route::File {
-                src_name: src_name.clone(),
-                dst_name: dst_name.clone(),
-                old: old.clone(),
-                new: new.clone(),
+                old_krate: src_name.clone(),
+                new_krate: dst_name.clone(),
+                old_version: old.clone(),
+                new_version: new.clone(),
                 path,
             })
         }
@@ -57,10 +57,10 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                 let navigator = navigator;
                 move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                     navigator.push(&Route::File {
-                        src_name: src_name.clone(),
-                        dst_name: dst_name.clone(),
-                        old: old.clone().into(),
-                        new: new.clone().into(),
+                        old_krate: src_name.clone(),
+                        new_krate: dst_name.clone(),
+                        old_version: old.clone().into(),
+                        new_version: new.clone().into(),
                         path: path.clone(),
                     });
                 }
