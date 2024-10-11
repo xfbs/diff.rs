@@ -34,13 +34,16 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         let new: VersionId = props.new.version.num.clone().into();
         let navigator = navigator.clone();
         move |path: String| {
-            navigator.push(&Route::File {
-                old_krate: src_name.clone(),
-                new_krate: dst_name.clone(),
-                old_version: old.clone(),
-                new_version: new.clone(),
-                path,
-            })
+            navigator.push(
+                &Route::File {
+                    old_krate: src_name.clone(),
+                    new_krate: dst_name.clone(),
+                    old_version: old.clone(),
+                    new_version: new.clone(),
+                    path,
+                }
+                .simplify(),
+            )
         }
     };
     html! {

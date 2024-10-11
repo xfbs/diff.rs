@@ -176,6 +176,32 @@ impl Route {
             Route::Search { query } => html! { <Search search={query} /> },
         }
     }
+
+    /// Try to simplify a route.
+    ///
+    /// If the route is a multi-crate route, and the crates are identical, then simplify it to
+    /// using a single-crate route.
+    pub fn simplify(self) -> Self {
+        match self {
+            Route::File {
+                old_krate,
+                old_version,
+                new_krate,
+                new_version,
+                path,
+            } if old_krate == new_krate => Route::SingleSourceFile {
+                krate: old_krate,
+                old_version,
+                new_version,
+                path,
+            },
+            Route::Crates {
+                old_krate,
+                new_krate,
+            } if old_krate == new_krate => Route::Crate { krate: old_krate },
+            other => other,
+        }
+    }
 }
 
 /// Render application.
