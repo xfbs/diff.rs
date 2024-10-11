@@ -135,9 +135,18 @@ pub struct CrateSource {
     pub files: BTreeMap<String, Bytes>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum CrateSourceError {
+    #[error("hashsum mismatch in crate response: expected {expected:02x?} but got {got:02x?}")]
+    HashsumMismatch { expected: Vec<u8>, got: Vec<u8> },
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
 impl CrateSource {
     /// Create empty crate source for the given version.
-    pub fn new(version: VersionInfo, data: &[u8]) -> Result<Self> {
+    pub fn new(version: VersionInfo, data: &[u8]) -> Result<Self, CrateSourceError> {
         let mut source = CrateSource {
             version,
             files: Default::default(),
@@ -148,7 +157,7 @@ impl CrateSource {
     }
 
     /// Parse gzipped tarball returned by crates.io.
-    fn parse_compressed(&mut self, data: &[u8]) -> Result<()> {
+    fn parse_compressed(&mut self, data: &[u8]) -> Result<(), CrateSourceError> {
         // compute hash
         let mut hasher = Sha256::new();
         hasher.update(data);
@@ -156,7 +165,10 @@ impl CrateSource {
 
         // make sure hash matches
         if hash[..] != self.version.checksum[..] {
-            return Err(anyhow!("Invalid hash sum for crate"));
+            return Err(CrateSourceError::HashsumMismatch {
+                expected: self.version.checksum.clone(),
+                got: hash[..].to_vec(),
+            });
         }
 
         let mut decoder = GzDecoder::new(data);
@@ -165,7 +177,7 @@ impl CrateSource {
     }
 
     /// Parse archive.
-    fn parse_archive(&mut self, data: &mut dyn Read) -> Result<()> {
+    fn parse_archive(&mut self, data: &mut dyn Read) -> Result<(), CrateSourceError> {
         let mut archive = Archive::new(data);
         for entry in archive.entries()? {
             let mut entry = entry?;
