@@ -62,12 +62,11 @@ pages:
   stage: publish
   image: alpine
   before_script:
-    - apk add brotli
+    - apk add brotli gzip
   script:
-    - export FILES=$(ls dist/*)
-    - gzip -k $FILES
-    - brotli -k $FILES
     - mv dist public
+    - find public -not -name '*.gz' -not -name '*.br' -type f -exec gzip -vk {} \;
+    - find public -not -name '*.gz' -not -name '*.br' -type f -exec brotli -vk {} \;
     - echo '/* / 200' >> public/_redirects
   artifacts:
     paths:
