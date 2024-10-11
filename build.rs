@@ -1,5 +1,10 @@
-use vergen::EmitBuilder;
+use vergen_gitcl::{Emitter, GitclBuilder};
 
 fn main() {
-    EmitBuilder::builder().all_git().emit().unwrap();
+    let gitcl = GitclBuilder::all_git().unwrap();
+    Emitter::default()
+        .add_instructions(&gitcl)
+        .unwrap()
+        .emit()
+        .unwrap();
 }
