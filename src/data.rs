@@ -226,12 +226,7 @@ const CONTEXT_LINES: usize = 3;
 
 impl VersionDiff {
     /// Generate diff data
-    pub fn new<T1: Into<Arc<CrateSource>>, T2: Into<Arc<CrateSource>>>(
-        left: T1,
-        right: T2,
-    ) -> Self {
-        let left = left.into();
-        let right = right.into();
+    pub fn new(left: Arc<CrateSource>, right: Arc<CrateSource>) -> Self {
         info!(
             "Computing diff for {} version {} and {} version {}",
             left.version.krate, left.version.num, right.version.krate, right.version.num
