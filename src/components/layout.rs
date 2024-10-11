@@ -28,14 +28,3 @@ pub fn Content(props: &ContentProps) -> Html {
         </div>
     }
 }
-
-/*
-#[function_component]
-pub fn Footer(props: &ContentProps) -> Html {
-    html! {
-        <footer style="text-align: center; position: absolute; bottom: 0; margin: auto;">
-            { for props.children.iter() }
-        </footer>
-    }
-}
-*/
