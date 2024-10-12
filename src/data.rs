@@ -1,6 +1,7 @@
 use crate::version::{VersionId, VersionNamed};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
+use camino::{Utf8Path, Utf8PathBuf};
 use flate2::bufread::GzDecoder;
 use gloo_net::http::Request;
 use log::*;
@@ -132,7 +133,7 @@ impl VersionInfo {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateSource {
     pub version: VersionInfo,
-    pub files: BTreeMap<String, Bytes>,
+    pub files: BTreeMap<Utf8PathBuf, Bytes>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -183,6 +184,7 @@ impl CrateSource {
             let mut entry = entry?;
             let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
             let path: String = path.chars().skip_while(|c| *c != '/').skip(1).collect();
+            let path: Utf8PathBuf = path.into();
 
             // read data
             let mut data = vec![];
@@ -195,8 +197,8 @@ impl CrateSource {
     }
 
     /// Add a single file to crate source.
-    fn add<T: Into<Bytes>>(&mut self, path: &str, data: T) {
-        self.files.insert(path.to_string(), data.into());
+    fn add<T: Into<Bytes>>(&mut self, path: &Utf8Path, data: T) {
+        self.files.insert(path.into(), data.into());
     }
 }
 
@@ -216,9 +218,9 @@ pub struct VersionDiff {
     /// Right crate source that is diffed
     pub right: Arc<CrateSource>,
     /// Files in this version diff
-    pub files: BTreeMap<String, FileDiff>,
+    pub files: BTreeMap<Utf8PathBuf, FileDiff>,
     /// Summaries of files and folders
-    pub summary: BTreeMap<String, (usize, usize)>,
+    pub summary: BTreeMap<Utf8PathBuf, (usize, usize)>,
 }
 
 /// How many lines of context to show in a diff
@@ -233,14 +235,14 @@ impl VersionDiff {
         );
 
         let mut files = BTreeMap::new();
-        let mut summary: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+        let mut summary: BTreeMap<Utf8PathBuf, (usize, usize)> = BTreeMap::new();
 
         // intersection of file paths in both left and right crate sources
-        let file_paths: BTreeSet<&str> = left
+        let file_paths: BTreeSet<&Utf8Path> = left
             .files
             .keys()
             .chain(right.files.keys())
-            .map(|s| s.as_str())
+            .map(|s| s.as_path())
             .collect();
 
         // compute diffs
@@ -319,16 +321,14 @@ impl VersionDiff {
             }
 
             // compute additions
-            for segment in path.split('/') {
-                let end = path.subslice_offset(segment).unwrap() + segment.len();
-                let path = path[0..end].to_string();
-                let summary = summary.entry(path).or_default();
+            for path in path.ancestors() {
+                let summary = summary.entry(path.into()).or_default();
                 summary.0 += insertions;
                 summary.1 += deletions;
             }
 
             files.insert(
-                path.to_string(),
+                path.into(),
                 FileDiff {
                     changes,
                     context_ranges: ranges,

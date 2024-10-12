@@ -109,7 +109,7 @@ pub struct DiffViewProps {
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
     let empty = FileDiff::default();
-    let file_diff = props.diff.files.get(props.path.as_str()).unwrap_or(&empty);
+    let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
     let is_identical_version = props.diff.left.version == props.diff.right.version;
 
     // Determine which syntax should be used for this file. It will be based

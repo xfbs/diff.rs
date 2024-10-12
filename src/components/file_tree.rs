@@ -86,11 +86,14 @@ fn build_tree(diff: &VersionDiff) -> TreeData<String> {
 
     for path in diff.files.keys() {
         let mut pos = root.clone();
-        for (position, segment) in path.split('/').with_position() {
+        for (position, segment) in path.as_str().split('/').with_position() {
             let summary = {
-                let end = path.subslice_offset(segment).unwrap() + segment.len();
-                let path = &path[0..end];
-                diff.summary.get(path).cloned().unwrap_or_default()
+                let end = path.as_str().subslice_offset(segment).unwrap() + segment.len();
+                let path = &path.as_str()[0..end];
+                diff.summary
+                    .get(camino::Utf8Path::new(path))
+                    .cloned()
+                    .unwrap_or_default()
             };
             let summary_label = html! {
                 <span style="white-space: nowrap;">
