@@ -18,6 +18,7 @@ use crate::{
     version::{VersionId, VersionNamed},
     views::*,
 };
+use camino::Utf8PathBuf;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -55,7 +56,7 @@ pub enum Route {
     BrowseFile {
         krate: String,
         version: VersionId,
-        path: String,
+        path: Utf8PathBuf,
     },
 
     /// Crate view, will make request to get most recent version and redirect.
@@ -83,7 +84,7 @@ pub enum Route {
         krate: String,
         old_version: VersionId,
         new_version: VersionId,
-        path: String,
+        path: Utf8PathBuf,
     },
 
     /// File diff view, render differences in the file path between the crate versions.
@@ -93,7 +94,7 @@ pub enum Route {
         old_version: VersionId,
         new_krate: String,
         new_version: VersionId,
-        path: String,
+        path: Utf8PathBuf,
     },
 
     /// Route that is matched if no other route matches, shows error message.
@@ -126,7 +127,7 @@ impl Route {
                     dst_name={krate}
                     old={version.clone()}
                     new={version}
-                    {path}
+                    path={path.to_string()}
                 />
             },
             Route::Crate { krate } => html! {
@@ -161,7 +162,7 @@ impl Route {
                 new_version,
                 path,
             } => html! {
-                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} {path} />
+                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} path={path.to_string()} />
             },
             Route::File {
                 old_krate,
@@ -170,7 +171,7 @@ impl Route {
                 new_version,
                 path,
             } => html! {
-                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
+                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} path={path.to_string()} />
             },
             Route::NotFound => html! { <NotFound /> },
             Route::Search { query } => html! { <Search search={query} /> },

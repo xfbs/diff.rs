@@ -40,7 +40,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                     new_krate: dst_name.clone(),
                     old_version: old.clone(),
                     new_version: new.clone(),
-                    path,
+                    path: path.into(),
                 }
                 .simplify(),
             )
@@ -64,7 +64,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                         new_krate: dst_name.clone(),
                         old_version: old.clone().into(),
                         new_version: new.clone().into(),
-                        path: path.clone(),
+                        path: path.clone().into(),
                     });
                 }
             }

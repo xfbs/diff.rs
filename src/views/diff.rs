@@ -207,7 +207,7 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                                 new_krate: dst_name.clone(),
                                 old_version: old.clone().into(),
                                 new_version: new.clone().into(),
-                                path: path.clone().unwrap_or_default(),
+                                path: path.clone().unwrap_or_default().into(),
                             });
                         }
                     }
