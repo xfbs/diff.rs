@@ -1,6 +1,7 @@
 use crate::version::{VersionId, VersionNamed};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
+use camino::{Utf8Path, Utf8PathBuf};
 use flate2::bufread::GzDecoder;
 use gloo_net::http::Request;
 use log::*;
@@ -17,7 +18,6 @@ use std::{
 use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;
-use camino::{Utf8PathBuf, Utf8Path};
 
 /// Crates.io response type for crate search
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -162,10 +162,7 @@ pub enum CrateSourceError {
     /// prefix, we return an error here. Those files would otherwise be invisible to the user
     /// interface.
     #[error("encountered invalid prefix in path {path} (expected {prefix})")]
-    InvalidPrefix {
-        path: String,
-        prefix: String,
-    },
+    InvalidPrefix { path: String, prefix: String },
 }
 
 impl CrateSource {
@@ -215,7 +212,12 @@ impl CrateSource {
             let path = std::str::from_utf8(&*bytes)?;
             let path = match path.strip_prefix(&prefix) {
                 Some(path) => path,
-                None => return Err(CrateSourceError::InvalidPrefix { path: path.to_string(), prefix }),
+                None => {
+                    return Err(CrateSourceError::InvalidPrefix {
+                        path: path.to_string(),
+                        prefix,
+                    })
+                }
             };
             let path: Utf8PathBuf = path.into();
 
