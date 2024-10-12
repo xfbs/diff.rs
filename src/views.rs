@@ -9,7 +9,7 @@ use crate::{
     cache::*,
     components::*,
     data::{CrateResponse, VersionInfo},
-    Link, Route,
+    Route,
 };
 use std::sync::Arc;
 use yew::{prelude::*, suspense::*};
