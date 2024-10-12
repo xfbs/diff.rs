@@ -1,8 +1,8 @@
-use crate::data::{CrateSource, VersionDiff};
+use crate::data::VersionDiff;
 use anyhow::Result;
 use camino::Utf8PathBuf;
 use itertools::{Itertools, Position};
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 use subslice_offset::SubsliceOffset;
 use yew::prelude::*;
 use yewprint::{
@@ -12,8 +12,6 @@ use yewprint::{
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct FileTreeProps {
-    pub old: Arc<CrateSource>,
-    pub new: Arc<CrateSource>,
     pub diff: Rc<VersionDiff>,
     pub path: Utf8PathBuf,
     pub onselect: Callback<String>,

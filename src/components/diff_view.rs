@@ -75,8 +75,6 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             <nav id="files" aria-label="Files">
                 <FileTree
                     diff={diff.clone()}
-                    old={props.old.clone()}
-                    new={props.new.clone()}
                     path={props.path.clone()}
                     {onselect}
                 />
