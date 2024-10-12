@@ -209,7 +209,7 @@ impl CrateSource {
 
             // make path encoding error explicit
             let bytes = entry.path_bytes();
-            let path = std::str::from_utf8(&*bytes)?;
+            let path = std::str::from_utf8(&bytes)?;
             let path = match path.strip_prefix(&prefix) {
                 Some(path) => path,
                 None => {

@@ -30,7 +30,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     clear_selected(&mut tree).unwrap();
 
     // mark current file as selected and recursively expand parents
-    mark_expand(&mut tree, &props.path.as_str()).unwrap();
+    mark_expand(&mut tree, props.path.as_str()).unwrap();
 
     // on expand or collapse: toggle expanded bit of node.
     let update = use_force_update();
