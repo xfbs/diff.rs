@@ -5,6 +5,7 @@ use crate::{
     version::VersionId,
     *,
 };
+use camino::Utf8PathBuf;
 use log::*;
 use semver::Version;
 use similar::ChangeTag;
@@ -18,7 +19,7 @@ pub struct SourceViewProps {
     pub dst_info: Arc<CrateResponse>,
     pub old: Arc<CrateSource>,
     pub new: Arc<CrateSource>,
-    pub path: String,
+    pub path: Utf8PathBuf,
 }
 
 #[function_component]
@@ -64,7 +65,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                         new_krate: dst_name.clone(),
                         old_version: old.clone().into(),
                         new_version: new.clone().into(),
-                        path: path.clone().into(),
+                        path: path.clone(),
                     });
                 }
             }
@@ -101,20 +102,20 @@ struct DiffGroupInfo {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct DiffViewProps {
-    pub path: String,
+    pub path: Utf8PathBuf,
     pub diff: Rc<VersionDiff>,
 }
 
 #[function_component]
 pub fn DiffView(props: &DiffViewProps) -> Html {
     let empty = FileDiff::default();
-    let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
+    let file_diff = props.diff.files.get(props.path.as_str()).unwrap_or(&empty);
     let is_identical_version = props.diff.left.version == props.diff.right.version;
 
     // Determine which syntax should be used for this file. It will be based
     // first on the file's name, then the file's extension, then the first line.
     let syntax = infer_syntax_for_file(
-        &props.path,
+        props.path.as_str(),
         file_diff
             .changes
             .iter()

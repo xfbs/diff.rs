@@ -1,5 +1,6 @@
 use super::*;
 use crate::version::VersionId;
+use camino::Utf8PathBuf;
 use semver::Version;
 use yew_router::prelude::*;
 
@@ -11,7 +12,7 @@ pub struct DiffProps {
     pub old: VersionId,
     pub new: VersionId,
     #[prop_or_default]
-    pub path: Option<String>,
+    pub path: Option<Utf8PathBuf>,
 }
 
 /// Show diff of a file change between two crate versions.
@@ -93,7 +94,7 @@ struct VersionResolverProps {
     dst_info: Arc<CrateResponse>,
     old: VersionId,
     new: VersionId,
-    path: Option<String>,
+    path: Option<Utf8PathBuf>,
 }
 
 #[function_component]
@@ -141,7 +142,7 @@ struct SourceFetcherProps {
     dst_info: Arc<CrateResponse>,
     old: VersionInfo,
     new: VersionInfo,
-    path: Option<String>,
+    path: Option<Utf8PathBuf>,
 }
 
 #[function_component]

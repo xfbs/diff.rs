@@ -127,7 +127,7 @@ impl Route {
                     dst_name={krate}
                     old={version.clone()}
                     new={version}
-                    path={path.to_string()}
+                    {path}
                 />
             },
             Route::Crate { krate } => html! {
@@ -162,7 +162,7 @@ impl Route {
                 new_version,
                 path,
             } => html! {
-                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} path={path.to_string()} />
+                <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} {path} />
             },
             Route::File {
                 old_krate,
@@ -171,7 +171,7 @@ impl Route {
                 new_version,
                 path,
             } => html! {
-                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} path={path.to_string()} />
+                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
             },
             Route::NotFound => html! { <NotFound /> },
             Route::Search { query } => html! { <Search search={query} /> },

@@ -1,5 +1,6 @@
 use crate::data::{CrateSource, VersionDiff};
 use anyhow::Result;
+use camino::Utf8PathBuf;
 use itertools::{Itertools, Position};
 use std::{rc::Rc, sync::Arc};
 use subslice_offset::SubsliceOffset;
@@ -14,7 +15,7 @@ pub struct FileTreeProps {
     pub old: Arc<CrateSource>,
     pub new: Arc<CrateSource>,
     pub diff: Rc<VersionDiff>,
-    pub path: String,
+    pub path: Utf8PathBuf,
     pub onselect: Callback<String>,
 }
 
@@ -29,7 +30,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     clear_selected(&mut tree).unwrap();
 
     // mark current file as selected and recursively expand parents
-    mark_expand(&mut tree, &props.path).unwrap();
+    mark_expand(&mut tree, &props.path.as_str()).unwrap();
 
     // on expand or collapse: toggle expanded bit of node.
     let update = use_force_update();
