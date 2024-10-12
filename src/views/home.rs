@@ -1,4 +1,5 @@
-use super::*;
+use crate::{components::*, Route};
+use yew::prelude::*;
 use yew_router::prelude::*;
 
 #[function_component]

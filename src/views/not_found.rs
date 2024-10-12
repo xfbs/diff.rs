@@ -1,4 +1,5 @@
-use super::*;
+use crate::components::{Center, Content, Error, Footer, SimpleNavbar};
+use yew::prelude::*;
 
 /// Not found view, shows generic error.
 #[function_component]

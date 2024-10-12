@@ -5,15 +5,6 @@
 //! by more than one view (or are sufficiently complex) should go into the `components`
 //! module, which contains components shared between views.
 
-use crate::{
-    cache::*,
-    components::*,
-    data::{CrateResponse, VersionInfo},
-    Route,
-};
-use std::sync::Arc;
-use yew::{prelude::*, suspense::*};
-
 mod about;
 mod diff;
 mod home;

@@ -1,7 +1,8 @@
-use super::*;
-use crate::version::VersionId;
+use crate::{cache::*, components::*, data::*, version::VersionId, Route};
 use camino::Utf8PathBuf;
 use semver::Version;
+use std::sync::Arc;
+use yew::{prelude::*, suspense::*};
 use yew_router::prelude::*;
 
 /// Props for which file to show.
