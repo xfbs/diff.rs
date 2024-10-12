@@ -1,7 +1,6 @@
 use crate::version::{VersionId, VersionNamed};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
-use camino::{Utf8Path, Utf8PathBuf};
 use flate2::bufread::GzDecoder;
 use gloo_net::http::Request;
 use log::*;
@@ -18,6 +17,7 @@ use std::{
 use subslice_offset::SubsliceOffset;
 use tar::Archive;
 use url::Url;
+use camino::{Utf8PathBuf, Utf8Path};
 
 /// Crates.io response type for crate search
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -138,11 +138,34 @@ pub struct CrateSource {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CrateSourceError {
+    /// We get an expected hashsum in the crate info response from crates.io. When
+    /// we download a crate, we verify that the data we got matches this. If not,
+    /// return an error here.
     #[error("hashsum mismatch in crate response: expected {expected:02x?} but got {got:02x?}")]
     HashsumMismatch { expected: Vec<u8>, got: Vec<u8> },
 
+    /// These errors can be caused by the decompression (flate2 crate) or the untarring (tar
+    /// crate).
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    /// In tar archives, paths are represented as raw bytes. We expect that these are valid UTF-8
+    /// encoded strings. If this is not the case, we return an error. This is safer than using
+    /// something like [`String::from_utf8_lossy`], because an attacker could place two files with
+    /// invalid characters which would result in the same (lossy) path, thereby hiding the presence
+    /// of a file from the user interface.
+    #[error("error decoding path as utf8")]
+    PathEncoding(#[from] std::str::Utf8Error),
+
+    /// Crate tar archives contain files predixed under the path `<crate>-<version>`. There should
+    /// not be any other files in this archive. If we encounter a file with a different path
+    /// prefix, we return an error here. Those files would otherwise be invisible to the user
+    /// interface.
+    #[error("encountered invalid prefix in path {path} (expected {prefix})")]
+    InvalidPrefix {
+        path: String,
+        prefix: String,
+    },
 }
 
 impl CrateSource {
@@ -180,10 +203,20 @@ impl CrateSource {
     /// Parse archive.
     fn parse_archive(&mut self, data: &mut dyn Read) -> Result<(), CrateSourceError> {
         let mut archive = Archive::new(data);
+
+        // this is the path prefix we expect in the archive.
+        let prefix = format!("{}-{}/", self.version.krate, self.version.num);
+
         for entry in archive.entries()? {
             let mut entry = entry?;
-            let path = String::from_utf8_lossy(&entry.path_bytes()).to_string();
-            let path: String = path.chars().skip_while(|c| *c != '/').skip(1).collect();
+
+            // make path encoding error explicit
+            let bytes = entry.path_bytes();
+            let path = std::str::from_utf8(&*bytes)?;
+            let path = match path.strip_prefix(&prefix) {
+                Some(path) => path,
+                None => return Err(CrateSourceError::InvalidPrefix { path: path.to_string(), prefix }),
+            };
             let path: Utf8PathBuf = path.into();
 
             // read data
