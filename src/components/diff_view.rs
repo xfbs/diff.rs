@@ -2,7 +2,6 @@ use crate::{
     components::{ComplexNavbar, Content, FileTree},
     data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
     syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
-    version::VersionId,
     *,
 };
 use camino::Utf8PathBuf;
@@ -28,25 +27,6 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         VersionDiff::new(old.clone(), new.clone())
     });
     let navigator = use_navigator().unwrap();
-    let onselect = {
-        let src_name = props.src_info.krate.id.clone();
-        let dst_name = props.dst_info.krate.id.clone();
-        let old: VersionId = props.old.version.num.clone().into();
-        let new: VersionId = props.new.version.num.clone().into();
-        let navigator = navigator.clone();
-        move |path: String| {
-            navigator.push(
-                &Route::File {
-                    old_krate: src_name.clone(),
-                    new_krate: dst_name.clone(),
-                    old_version: old.clone(),
-                    new_version: new.clone(),
-                    path: path.into(),
-                }
-                .simplify(),
-            )
-        }
-    };
     html! {
         <>
         <ComplexNavbar
@@ -71,18 +51,17 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             }
         />
         <Content>
-        <main>
-            <nav id="files" aria-label="Files">
-                <FileTree
-                    diff={diff.clone()}
-                    path={props.path.clone()}
-                    {onselect}
-                />
-            </nav>
-            <div id="diff-view">
-                <DiffView {diff} path={props.path.clone()} />
-            </div>
-        </main>
+            <main class="flex flex-col md:flex-row gap-4 md:gap-0">
+                <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
+                    <FileTree
+                        diff={diff.clone()}
+                        path={props.path.clone()}
+                    />
+                </nav>
+                <div id="diff-view" class="flex-1">
+                    <DiffView {diff} path={props.path.clone()} />
+                </div>
+            </main>
         </Content>
         </>
     }
@@ -165,7 +144,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     let padding = file_diff.changes.len().max(1).to_string().len();
 
     html! {
-        <pre>
+        <pre class="bg-white">
         {
             stack.iter()
                 .map(|DiffGroupInfo {group, range, in_context}| {

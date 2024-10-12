@@ -1,7 +1,7 @@
 use crate::version::{VersionId, VersionNamed};
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use flate2::bufread::GzDecoder;
 use gloo_net::http::Request;
 use log::*;
@@ -13,6 +13,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     io::Read,
     ops::Range,
+    rc::Rc,
     sync::Arc,
 };
 use subslice_offset::SubsliceOffset;
@@ -256,6 +257,8 @@ pub struct VersionDiff {
     pub files: BTreeMap<Utf8PathBuf, FileDiff>,
     /// Summaries of files and folders
     pub summary: BTreeMap<Utf8PathBuf, (usize, usize)>,
+
+    pub tree: Entry,
 }
 
 /// How many lines of context to show in a diff
@@ -269,6 +272,7 @@ impl VersionDiff {
             left.version.krate, left.version.num, right.version.krate, right.version.num
         );
 
+        let mut entry = Entry::default();
         let mut files = BTreeMap::new();
         let mut summary: BTreeMap<Utf8PathBuf, (usize, usize)> = BTreeMap::new();
 
@@ -362,6 +366,14 @@ impl VersionDiff {
                 summary.1 += deletions;
             }
 
+            entry.insert(
+                path,
+                Changes {
+                    added: insertions as u64,
+                    removed: deletions as u64,
+                },
+            );
+
             files.insert(
                 path.into(),
                 FileDiff {
@@ -376,6 +388,99 @@ impl VersionDiff {
             right,
             files,
             summary,
+            tree: entry,
         }
+    }
+}
+
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Changes {
+    pub added: u64,
+    pub removed: u64,
+}
+
+impl std::ops::Add for Changes {
+    type Output = Self;
+    fn add(mut self, rhs: Self) -> Self {
+        self.added += rhs.added;
+        self.removed += rhs.removed;
+        self
+    }
+}
+
+impl std::ops::AddAssign for Changes {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum State {
+    #[default]
+    Unchanged,
+    Added,
+    Deleted,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum Item {
+    File,
+    Dir(BTreeMap<String, Rc<Entry>>),
+}
+
+impl Item {
+    pub fn is_dir(&self) -> bool {
+        matches!(self, Item::Dir(_))
+    }
+}
+
+impl Default for Item {
+    fn default() -> Self {
+        Self::Dir(Default::default())
+    }
+}
+
+#[derive(Clone, PartialEq, Default, Debug, Eq)]
+pub struct Entry {
+    pub name: String,
+    pub item: Item,
+    pub changes: Changes,
+    pub state: State,
+}
+
+impl Entry {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            ..Default::default()
+        }
+    }
+
+    pub fn insert(&mut self, path: &Utf8Path, changes: Changes) {
+        let mut entry = self;
+
+        for component in path.components() {
+            entry.changes += changes;
+
+            let component = match component {
+                Utf8Component::RootDir => continue,
+                Utf8Component::Normal(path) => path,
+                Utf8Component::CurDir => unreachable!(),
+                Utf8Component::ParentDir => unreachable!(),
+                Utf8Component::Prefix(_) => unreachable!(),
+            };
+
+            entry = Rc::make_mut(
+                match &mut entry.item {
+                    Item::File => unreachable!(),
+                    Item::Dir(entries) => entries,
+                }
+                .entry(component.to_string())
+                .or_insert_with(|| Rc::new(Entry::new(component.to_string()))),
+            );
+        }
+
+        entry.changes = changes;
+        entry.item = Item::File;
     }
 }

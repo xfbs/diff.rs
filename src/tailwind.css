@@ -6,4 +6,64 @@
     body {
         @apply bg-white dark:bg-black;
     }
+
+    /*
+    html {
+        @apply overscroll-none;
+    }
+    */
+
+    .file-tree {
+        @apply mx-2;
+        @apply text-black dark:text-gray-300;
+    }
+
+    .file-entry {
+        @apply h-8 rounded-md;
+        @apply hover:bg-gray-100 dark:hover:bg-gray-900;
+        @apply flex items-center px-1 gap-2;
+
+        /*@apply max-w-fit;*/
+    }
+
+    .file-entry.active {
+        @apply bg-blue-300 dark:bg-blue-700;
+    }
+
+    .file-entry .toggle {
+        @apply w-4 shrink-0;
+    }
+
+    .file-entry .toggle.active {
+    }
+
+    .file-entry .icon {
+        @apply w-4 shrink-0;
+    }
+
+    .file-entry .name {
+        @apply flex-1 text-ellipsis overflow-hidden;
+    }
+
+    .file-entry .tags {
+        @apply flex items-center gap-1;
+    }
+
+    .file-entry .tags .tag {
+        @apply rounded-lg px-1;
+        @apply bg-blue-50 dark:bg-gray-800;
+    }
+
+    .file-entry .tags .tag.added {
+        @apply text-green-600;
+    }
+
+    .file-entry .tags .tag.removed {
+        @apply text-red-400;
+    }
+
+    .file-subtree {
+        @apply ml-3;
+        @apply border-l dark:border-slate-800;
+    }
 }

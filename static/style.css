@@ -12,14 +12,14 @@ pre {
 }
 
 #files {
-    width: 300px;
+    /*width: 300px;*/
     overflow: scroll;
     height: 100%;
     /*height: calc(100vh - var(--top-nav-height));*/
 }
 
 #diff-view {
-    width: 100%;
+    /*width: 100%;*/
     padding-left: 8px;
     overflow: scroll;
     height: 100%;
