@@ -3,6 +3,8 @@ name = "diff-rs"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+authors = ["Patrick Elsen <pelsen@xfbs.net>"]
+description = "Web application that renders the diff between two crate versions"
 
 [dependencies]
 anyhow = "1.0.69"
@@ -13,15 +15,17 @@ hex = { version = "0.4.3", features = ["serde"] }
 implicit-clone = "0.4.9"
 indexmap = "2.2.6"
 itertools = "0.13.0"
+lazy_static = "1.5.0"
 log = "0.4.17"
 semver = { version = "1.0.22", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }
 sha2 = "0.10.8"
 similar = { version = "2.2.1", features = ["text", "bytes"] }
 strum = { version = "0.26.2", features = ["derive"] }
-syntect = { version = "5.0.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
 subslice-offset = "0.1.1"
+syntect = { version = "5.0.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
 tar = "0.4.38"
+thiserror = "1.0.64"
 url = { version = "2.3.1", features = ["serde"] }
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.61", features = ["HtmlInputElement"] }
@@ -30,19 +34,21 @@ yew-hooks = "0.3.1"
 yew-router = "0.18.0"
 yew_icons = { version = "0.8.0", features = ["LucideBox", "LucideFileDiff"] }
 yewprint = { version = "0.5" }
-lazy_static = "1.5.0"
-thiserror = "1.0.64"
 
+# enable LTO and use a single codegen-unit to get smaller and more efficient code.
 [profile.release]
 lto = true
 opt-level = 3
 codegen-units = 1
 
 [dev-dependencies]
+# used to parse test data
 serde_json = "1.0.94"
 
 [build-dependencies]
+# used to get commit hash when building
 vergen-gitcl = { version = "1.0.1", features = [] }
 
 [package.metadata.cargo-machete]
+# we don't use hex directly, but we use it as a serde deserializer.
 ignored = ["hex"]
