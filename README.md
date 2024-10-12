@@ -9,7 +9,8 @@ deployed at [diff.rs](https://diff.rs).
 
 It uses [Yew](https://yew.rs) as the reactive frontend framework, and
 [blueprint.js](https://blueprintjs.com) with
-[yewprint](https://docs.rs/yewprint) for many of the components.
+[yewprint](https://docs.rs/yewprint) for many of the components. Currently, a
+conversion to using [tailwind CSS](https://tailwindcss.com) is underway.
 
 The code in this repository compiles into a WebAssembly binary that runs in the
 browser. Since it only talks to the [crates.io](https://crates.io) API, it does
@@ -28,7 +29,8 @@ gzip-compressed tar balls, which are decompressed using
 [tar](https://docs.rs/tar). 
 
 Finally, the code uses [similar](https://docs.rs/simiar) to generate a diff and
-render it in the browser.
+render it in the browser. It uses the [syntect](https://docs.rs/syntect) for
+syntax highlighting.
 
 ## How to launch it
 
@@ -54,7 +56,8 @@ trunk serve
 You can also use it to build an optimized release version. This will place the
 build output into the `dist` folder. The `--release` flag enables some
 optimization, both building the Rust code in release mode, and running
-`wasm-opt` for further size savings.
+`wasm-opt` for further size savings. You might see a large speedup from running
+it this way.
 
 ```
 trunk build --release
@@ -62,10 +65,17 @@ trunk build --release
 
 ## How it is deployed
 
-It is currently hosted by GitLab Pages using [this tiny CI
-config](.gitlab-ci.yml). It serves the application statically, and uses both
-gzip and brotli compression for faster loading times.
+It is currently hosted by GitLab Pages using [this CI config](.gitlab-ci.yml).
+It serves the application statically, and uses both gzip and brotli compression
+for smaller assets and faster loading times.
+
+The deployed version of it has privacy-preserving (cookie-less) analytics
+enabled to help me measure how many people are actively using it. If you have
+an adblocker, this is likely blocked by it. You can see the data
+[here][analytics]
 
 ## License
 
 MIT, see [LICENSE.md](LICENSE.md).
+
+[analytics]: https://counter.dev/dashboard.html?user=xfbs&token=4kPlix1Li7w%3D

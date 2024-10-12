@@ -1,3 +1,16 @@
-imports_granularity = "Crate"
-group_imports = "One"
 edition = "2021"
+
+# group together multiple imports from the same crate. for example, turns this:
+#
+# use std::path::PathBuf;
+# use std::fs::File;
+#
+# into this:
+#
+# use std::{path::PathBuf, fs::File}'
+imports_granularity = "Crate"
+
+# group imports into one section. some people prefer to have separate sections for
+# std, external crates, and internal module imports, but I prefer to have a single
+# block sorted lexicographically.
+group_imports = "One"

@@ -1,3 +1,7 @@
+# This file contains some helpful aliases you can use for development. These are
+# run using `just`, a Rust task runner. To use them, you may need to install Just,
+# which you can do by running `cargo install just`.
+
 # List available targets
 default:
     just --list
