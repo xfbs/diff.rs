@@ -252,3 +252,59 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
         </div>
     })
 }
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct SourceViewProps {
+    pub src_info: Arc<CrateResponse>,
+    pub dst_info: Arc<CrateResponse>,
+    pub old: Arc<CrateSource>,
+    pub new: Arc<CrateSource>,
+    pub path: Utf8PathBuf,
+}
+
+#[function_component]
+pub fn SourceView(props: &SourceViewProps) -> Html {
+    let diff = use_memo((props.old.clone(), props.new.clone()), |(old, new)| {
+        VersionDiff::new(old.clone(), new.clone())
+    });
+    let navigator = use_navigator().unwrap();
+    html! {
+        <>
+        <ComplexNavbar
+            src_name={props.src_info.krate.id.clone()}
+            dst_name={props.dst_info.krate.id.clone()}
+            old={props.old.version.num.clone()}
+            new={props.new.version.num.clone()}
+            src_info={props.src_info.clone()}
+            dst_info={props.dst_info.clone()}
+            onchange={
+                let path = props.path.clone();
+                let navigator = navigator;
+                move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
+                    navigator.push(&Route::File {
+                        old_krate: src_name.clone(),
+                        new_krate: dst_name.clone(),
+                        old_version: old.clone().into(),
+                        new_version: new.clone().into(),
+                        path: path.clone(),
+                    });
+                }
+            }
+        />
+        <Content>
+            <main class="flex flex-col md:flex-row gap-4 md:gap-0">
+                <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
+                    <FileTree
+                        diff={diff.clone()}
+                        path={props.path.clone()}
+                    />
+                </nav>
+                <div id="diff-view" class="flex-1">
+                    <DiffView {diff} path={props.path.clone()} />
+                </div>
+            </main>
+        </Content>
+        </>
+    }
+}
+
