@@ -155,14 +155,19 @@ fn SubTree(props: &SubTreeProps) -> Html {
     html! {
         <div class="file-subtree">
         {
-            entries.iter().map(|(key, entry)| html! {
-                <FileEntry
-                    key={key.to_string()}
-                    context={props.context.clone()}
-                    entry={entry.clone()}
-                    prefix={prefix.clone()}
-                    active={props.active.clone()}
-                />
+            entries.iter().filter_map(|(key, entry)| {
+                if entry.changes.has_changes() {
+                    Some(html! {
+                    <FileEntry
+                        key={key.to_string()}
+                        context={props.context.clone()}
+                        entry={entry.clone()}
+                        prefix={prefix.clone()}
+                        active={props.active.clone()}
+                    />})
+                } else {
+                    None
+                }
             }).collect::<Html>()
         }
         </div>
@@ -189,14 +194,19 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     html! {
         <div class="file-tree">
         {
-            entries.into_iter().map(|(key, entry)| html! {
-                <FileEntry
-                    {key}
-                    {entry}
-                    prefix={prefix.clone()}
-                    active={active.clone()}
-                    context={context.clone()}
-                />
+            entries.into_iter().filter_map(|(key, entry)| {
+                if entry.changes.has_changes() {
+                    Some(html! {
+                    <FileEntry
+                        {key}
+                        {entry}
+                        prefix={prefix.clone()}
+                        active={active.clone()}
+                        context={context.clone()}
+                    />})
+                } else {
+                    None
+                }
             }).collect::<Html>()
         }
         </div>

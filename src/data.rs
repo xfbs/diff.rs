@@ -399,6 +399,12 @@ pub struct Changes {
     pub removed: u64,
 }
 
+impl Changes {
+    pub(crate) fn has_changes(&self) -> bool {
+        self.added != 0 || self.removed != 0
+    }
+}
+
 impl std::ops::Add for Changes {
     type Output = Self;
     fn add(mut self, rhs: Self) -> Self {
