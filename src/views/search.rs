@@ -43,6 +43,7 @@ pub fn Search(props: &SearchProps) -> Html {
                     </div>
                 </Content>
             </div>
+            <Footer />
         </div>
     }
 }

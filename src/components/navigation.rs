@@ -15,8 +15,8 @@ pub struct NavbarProps {
 #[function_component]
 pub fn Navbar(props: &NavbarProps) -> Html {
     html! {
-        <nav id="navbar" class="bg-[#f6f8fa] dark:bg-[#010409] sticky w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600 dark:text-gray-300" aria-label="Main">
-            <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 flex-col sm:flex-row gap-4">
+        <nav id="navbar" class="" aria-label="Main">
+            <div class="navbar-items">
                 { for props.children.iter() }
             </div>
         </nav>
@@ -31,7 +31,7 @@ pub struct NavbarGroupProps {
 #[function_component]
 pub fn NavbarGroup(props: &NavbarGroupProps) -> Html {
     html! {
-        <div class="flex flex-row flex-wrap sm:flex-nowrap gap-6">
+        <div class="navbar-group">
             { for props.children.iter() }
         </div>
     }
@@ -61,11 +61,6 @@ pub fn NavbarItem(props: &NavbarHeadingProps) -> Html {
 }
 
 #[function_component]
-pub fn NavbarDivider() -> Html {
-    html! {}
-}
-
-#[function_component]
 pub fn SimpleNavbar() -> Html {
     html! {
         <Navbar>
@@ -81,9 +76,6 @@ pub fn SimpleNavbar() -> Html {
                         {"About"}
                     </Link>
                 </NavbarItem>
-            </NavbarGroup>
-            <NavbarGroup>
-                <Search />
             </NavbarGroup>
         </Navbar>
     }
@@ -214,11 +206,17 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
 
     html! {
         <Navbar>
-            <NavbarGroup>
-                <NavbarHeading>
-                    <Link to={Route::Home} classes="flex flex-row items-center"><YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} /><span>{ "diff.rs" }</span></Link></NavbarHeading>
-                <NavbarDivider />
-                <NavbarGroup>
+            <NavbarHeading>
+                <Link to={Route::Home} classes="flex flex-row items-center">
+                    <YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} />
+                    <span>{ "diff.rs" }</span>
+                </Link>
+            </NavbarHeading>
+            <div class="navbar-group lg:order-last grow min-w-[370px]">
+                <Search />
+            </div>
+            <div class="navbar-group grow">
+                <div class="navbar-group flex-nowrap">
                     <NavbarItem>
                         <a href={format!("https://crates.io/crates/{}", src_name)} class="flex flex-row items-center">
                             <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
@@ -241,39 +239,37 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                             }
                         />
                     </NavbarItem>
-                    <NavbarItem>
-                        <span class="cursor-pointer hover:rotate-180 transition delay-150 duration-300 ease-in-out" onclick={switch}>
-                            <SwitchIcon />
-                        </span>
-                    </NavbarItem>
-                    <NavbarItem>
-                        <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
-                            <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
-                        </a>
-                        { dst_name.clone() }
-                    </NavbarItem>
-                    <NavbarItem>
-                        <Select
-                            values={dst_versions}
-                            selected={Some(new.to_string().into()) as Option<IString>}
-                            onchange={
-                                let onchange = props.onchange.clone();
-                                let src_name = src_name.clone();
-                                let dst_name = dst_name.clone();
-                                let old = old.clone();
-                                move |new: IString| {
-                                    let new: Version = new.parse().unwrap();
-                                    onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
-                                }
+                </div>
+                <NavbarItem>
+                    <span class="cursor-pointer hover:rotate-180 transition delay-150 duration-300 ease-in-out" onclick={switch}>
+                        <SwitchIcon />
+                    </span>
+                </NavbarItem>
+                <div class="navbar-group flex-nowrap">
+                <NavbarItem>
+                    <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
+                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                    </a>
+                    { dst_name.clone() }
+                </NavbarItem>
+                <NavbarItem>
+                    <Select
+                        values={dst_versions}
+                        selected={Some(new.to_string().into()) as Option<IString>}
+                        onchange={
+                            let onchange = props.onchange.clone();
+                            let src_name = src_name.clone();
+                            let dst_name = dst_name.clone();
+                            let old = old.clone();
+                            move |new: IString| {
+                                let new: Version = new.parse().unwrap();
+                                onchange.emit(((src_name.clone(), old.clone()), (dst_name.clone(), new.clone())))
                             }
-                        />
-                    </NavbarItem>
-                    <NavbarDivider />
-                </NavbarGroup>
-            </NavbarGroup>
-            <NavbarGroup>
-                <Search />
-            </NavbarGroup>
+                        }
+                    />
+                </NavbarItem>
+                </div>
+            </div>
         </Navbar>
     }
 }

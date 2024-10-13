@@ -13,6 +13,22 @@
     }
     */
 
+    #navbar {
+        @apply bg-[#f6f8fa] dark:bg-[#010409] sticky w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600 dark:text-gray-300;
+    }
+
+    .navbar-rows {
+        @apply max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 flex-col gap-4;
+    }
+
+    #navbar .navbar-items {
+        @apply max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 flex-row gap-4;
+    }
+
+    .navbar-group {
+        @apply flex flex-row flex-wrap sm:flex-nowrap gap-6;
+    }
+
     .file-tree {
         @apply mx-2;
         @apply text-black dark:text-gray-300;
