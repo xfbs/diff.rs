@@ -1,5 +1,5 @@
 use crate::{
-    data::{Entry, Item, VersionDiff},
+    data::{Changes, Entry, Item, VersionDiff},
     Link, Route, VersionId,
 };
 use camino::Utf8PathBuf;
@@ -27,6 +27,30 @@ impl Context {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+enum ChangeFilter {
+    #[default]
+    All,
+    Changed,
+}
+
+impl ChangeFilter {
+    fn is_all(&self) -> bool {
+        matches!(self, Self::All)
+    }
+
+    fn is_changed(&self) -> bool {
+        matches!(self, Self::Changed)
+    }
+
+    fn matches(&self, changes: Changes) -> bool {
+        match self {
+            Self::All => true,
+            Self::Changed => changes != Changes::default(),
+        }
+    }
+}
+
 #[derive(Properties, PartialEq, Clone)]
 pub struct FileTreeProps {
     pub diff: Rc<VersionDiff>,
@@ -41,6 +65,8 @@ struct SubTreeProps {
     pub active: Rc<Utf8PathBuf>,
     #[prop_or_default]
     pub prefix: Rc<Utf8PathBuf>,
+    #[prop_or_default]
+    pub change_filter: ChangeFilter,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -51,6 +77,8 @@ struct FileEntryProps {
     pub active: Rc<Utf8PathBuf>,
     #[prop_or_default]
     pub prefix: Rc<Utf8PathBuf>,
+    #[prop_or_default]
+    pub change_filter: ChangeFilter,
 }
 
 #[function_component]
@@ -132,6 +160,7 @@ fn FileEntry(props: &FileEntryProps) -> Html {
                 context={props.context.clone()}
                 prefix={props.prefix.clone()}
                 active={props.active.clone()}
+                change_filter={props.change_filter}
             />
         }
         </>
@@ -155,15 +184,20 @@ fn SubTree(props: &SubTreeProps) -> Html {
     html! {
         <div class="file-subtree">
         {
-            entries.iter().map(|(key, entry)| html! {
-                <FileEntry
-                    key={key.to_string()}
-                    context={props.context.clone()}
-                    entry={entry.clone()}
-                    prefix={prefix.clone()}
-                    active={props.active.clone()}
-                />
-            }).collect::<Html>()
+            entries
+                .iter()
+                .filter(|(_, entry)| props.change_filter.matches(entry.changes))
+                .map(|(key, entry)| html! {
+                    <FileEntry
+                        key={key.to_string()}
+                        context={props.context.clone()}
+                        entry={entry.clone()}
+                        prefix={prefix.clone()}
+                        active={props.active.clone()}
+                        change_filter={props.change_filter}
+                    />
+                })
+                .collect::<Html>()
         }
         </div>
     }
@@ -174,6 +208,15 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     let entries = match props.diff.tree.item.clone() {
         Item::File => Default::default(),
         Item::Dir(entries) => entries,
+    };
+
+    let change_filter = use_state(|| ChangeFilter::All);
+    let change_filter_set = |filter: ChangeFilter| {
+        let change_filter = change_filter.clone();
+        move |event: MouseEvent| {
+            change_filter.set(filter);
+            event.prevent_default();
+        }
     };
 
     let prefix = Rc::new(Utf8PathBuf::default());
@@ -188,16 +231,39 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
 
     html! {
         <div class="file-tree">
+            <div class="header">
+                <span></span>
+                <span class="grow"></span>
+                <div class="button-group" role="group">
+                    <button
+                        type="button"
+                        class={classes!("first", change_filter.is_all().then(|| "active"))}
+                        onclick={change_filter_set(ChangeFilter::All)}>
+                        {"all"}
+                    </button>
+                    <button
+                        type="button"
+                        class={classes!("last", change_filter.is_changed().then(|| "active"))}
+                        onclick={change_filter_set(ChangeFilter::Changed)}>
+                        {"changed"}
+                    </button>
+                </div>
+            </div>
         {
-            entries.into_iter().map(|(key, entry)| html! {
-                <FileEntry
-                    {key}
-                    {entry}
-                    prefix={prefix.clone()}
-                    active={active.clone()}
-                    context={context.clone()}
-                />
-            }).collect::<Html>()
+            entries
+                .into_iter()
+                .filter(|(_, entry)| change_filter.matches(entry.changes))
+                .map(|(key, entry)| html! {
+                    <FileEntry
+                        {key}
+                        {entry}
+                        prefix={prefix.clone()}
+                        active={active.clone()}
+                        context={context.clone()}
+                        change_filter={*change_filter}
+                    />
+                })
+                .collect::<Html>()
         }
         </div>
     }

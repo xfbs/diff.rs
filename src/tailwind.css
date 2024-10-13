@@ -30,7 +30,31 @@
     }
 
     .file-tree {
-        @apply text-black dark:text-gray-300;
+        @apply text-black dark:text-gray-300 overflow-visible;
+    }
+
+    .file-tree .header {
+        @apply flex flex-row items-center gap-2 h-8 mb-1 mt-2;
+    }
+
+    .file-tree .header .button-group {
+        @apply inline-flex rounded-md shadow-sm;
+    }
+
+    .file-tree .header .button-group button.first {
+        @apply border rounded-s-md;
+    }
+
+    .file-tree .header .button-group button.last {
+        @apply border-e rounded-e-md;
+    }
+
+    .file-tree .header .button-group button.active {
+        @apply bg-blue-300 hover:bg-blue-300;
+    }
+
+    .file-tree .header .button-group button {
+        @apply px-2 py-1 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white;
     }
 
     .file-entry {

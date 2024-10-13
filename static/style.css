@@ -13,7 +13,7 @@ pre {
 
 #files {
     /*width: 300px;*/
-    overflow: scroll;
+    /*overflow: scroll;*/
     height: 100%;
     /*height: calc(100vh - var(--top-nav-height));*/
 }

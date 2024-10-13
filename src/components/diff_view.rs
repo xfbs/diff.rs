@@ -86,7 +86,7 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     let padding = file_diff.changes.len().max(1).to_string().len();
 
     html! {
-        <div class="rounded-lg border-solid border border-gray-200 dark:border-gray-600 overflow-clip my-4">
+        <div class="rounded-lg border-solid border border-gray-200 dark:border-gray-600 overflow-clip my-2">
             <div class="bg-[#f6f8fa] dark:bg-gray-900 h-8 border-b border-gray-200 dark:border-gray-600 flex flex-nowrap items-center gap-2 px-2 dark:text-gray-200">
                 <span class="font-mono">{props.path.file_name().unwrap_or("")}</span>
             </div>
