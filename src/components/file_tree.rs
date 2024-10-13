@@ -237,13 +237,13 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
                 <div class="button-group" role="group">
                     <button
                         type="button"
-                        class={classes!("first", change_filter.is_all().then(|| "active"))}
+                        class={classes!("first", change_filter.is_all().then_some("active"))}
                         onclick={change_filter_set(ChangeFilter::All)}>
                         {"all"}
                     </button>
                     <button
                         type="button"
-                        class={classes!("last", change_filter.is_changed().then(|| "active"))}
+                        class={classes!("last", change_filter.is_changed().then_some("active"))}
                         onclick={change_filter_set(ChangeFilter::Changed)}>
                         {"changed"}
                     </button>
