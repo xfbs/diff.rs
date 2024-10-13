@@ -3,3 +3,5 @@
 
 # trunk build artifacts
 /dist
+
+.idea/
