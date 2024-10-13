@@ -30,7 +30,6 @@
     }
 
     .file-tree {
-        @apply mx-2;
         @apply text-black dark:text-gray-300;
     }
 

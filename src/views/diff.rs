@@ -150,17 +150,17 @@ struct SourceFetcherProps {
 fn SourceFetcher(props: &SourceFetcherProps) -> Html {
     let fallback = html! {
         <>
-        <ComplexNavbar
-            src_name={props.src_info.krate.id.clone()}
-            dst_name={props.dst_info.krate.id.clone()}
-            old={props.old.num.clone()}
-            new={props.new.num.clone()}
-            src_info={props.src_info.clone()}
-            dst_info={props.dst_info.clone()}
-        />
-        <Center>
-            <Loading title={"Loading crate"} status={"Loading crate source"} />
-        </Center>
+            <ComplexNavbar
+                src_name={props.src_info.krate.id.clone()}
+                dst_name={props.dst_info.krate.id.clone()}
+                old={props.old.num.clone()}
+                new={props.new.num.clone()}
+                src_info={props.src_info.clone()}
+                dst_info={props.dst_info.clone()}
+            />
+            <Center>
+                <Loading title={"Loading crate"} status={"Loading crate source"} />
+            </Center>
         </>
     };
     html! {
@@ -270,41 +270,40 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
     let navigator = use_navigator().unwrap();
     html! {
         <>
-        <ComplexNavbar
-            src_name={props.src_info.krate.id.clone()}
-            dst_name={props.dst_info.krate.id.clone()}
-            old={props.old.version.num.clone()}
-            new={props.new.version.num.clone()}
-            src_info={props.src_info.clone()}
-            dst_info={props.dst_info.clone()}
-            onchange={
-                let path = props.path.clone();
-                let navigator = navigator;
-                move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
-                    navigator.push(&Route::File {
-                        old_krate: src_name.clone(),
-                        new_krate: dst_name.clone(),
-                        old_version: old.clone().into(),
-                        new_version: new.clone().into(),
-                        path: path.clone(),
-                    });
+            <ComplexNavbar
+                src_name={props.src_info.krate.id.clone()}
+                dst_name={props.dst_info.krate.id.clone()}
+                old={props.old.version.num.clone()}
+                new={props.new.version.num.clone()}
+                src_info={props.src_info.clone()}
+                dst_info={props.dst_info.clone()}
+                onchange={
+                    let path = props.path.clone();
+                    let navigator = navigator;
+                    move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
+                        navigator.push(&Route::File {
+                            old_krate: src_name.clone(),
+                            new_krate: dst_name.clone(),
+                            old_version: old.clone().into(),
+                            new_version: new.clone().into(),
+                            path: path.clone(),
+                        });
+                    }
                 }
-            }
-        />
-        <Content>
-            <main class="flex flex-col md:flex-row gap-4 md:gap-0">
-                <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
-                    <FileTree
-                        diff={diff.clone()}
-                        path={props.path.clone()}
-                    />
-                </nav>
-                <div id="diff-view" class="flex-1">
-                    <DiffView {diff} path={props.path.clone()} />
-                </div>
-            </main>
-        </Content>
+            />
+            <Content>
+                <main class="flex flex-col md:flex-row gap-2 lg:gap-4 px-2">
+                    <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
+                        <FileTree
+                            diff={diff.clone()}
+                            path={props.path.clone()}
+                        />
+                    </nav>
+                    <div id="diff-view" class="flex-1">
+                        <DiffView {diff} path={props.path.clone()} />
+                    </div>
+                </main>
+            </Content>
         </>
     }
 }
-

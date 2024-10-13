@@ -1,14 +1,11 @@
 use crate::{
-    components::{ComplexNavbar, Content, FileTree},
-    data::{CrateResponse, CrateSource, FileDiff, VersionDiff},
+    data::{FileDiff, VersionDiff},
     syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
-    *,
 };
 use camino::Utf8PathBuf;
 use log::*;
-use semver::Version;
 use similar::ChangeTag;
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 use syntect::highlighting::Style;
 use yew::prelude::*;
 
@@ -89,25 +86,32 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     let padding = file_diff.changes.len().max(1).to_string().len();
 
     html! {
-        <pre class="bg-white">
-        {
-            stack.iter()
-                .map(|DiffGroupInfo {group, range, in_context}| {
-                    let res = html!{
-                        <DiffLineGroup
-                            key={format!("{:?}", range)}
-                            group={group.clone()}
-                            {in_context}
-                            group_start_index={overall_index}
-                            {padding}
-                        />
-                    };
-                    overall_index += group.len();
-                    res
-                })
-                .collect::<Html>()
-        }
-        </pre>
+        <div class="rounded-lg border-solid border border-gray-200 dark:border-gray-600 overflow-clip my-4">
+            <div class="bg-[#f6f8fa] dark:bg-gray-900 h-8 border-b border-gray-200 dark:border-gray-600 flex flex-nowrap items-center gap-2 px-2 dark:text-gray-200">
+                <span class="font-mono">{props.path.file_name().unwrap_or("")}</span>
+            </div>
+            <div class="p-2 overflow-x-scroll bg-white">
+                <pre class="bg-white">
+                {
+                    stack.iter()
+                        .map(|DiffGroupInfo {group, range, in_context}| {
+                            let res = html!{
+                                <DiffLineGroup
+                                    key={format!("{:?}", range)}
+                                    group={group.clone()}
+                                    {in_context}
+                                    group_start_index={overall_index}
+                                    {padding}
+                                />
+                            };
+                            overall_index += group.len();
+                            res
+                        })
+                        .collect::<Html>()
+                }
+                </pre>
+            </div>
+        </div>
     }
 }
 
