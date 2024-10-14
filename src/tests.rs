@@ -1,7 +1,9 @@
-use crate::data::*;
+use crate::{Route, data::*};
 use anyhow::Result;
 use serde_json::from_reader;
 use std::fs::File;
+use test_strategy::*;
+use yew_router::Routable;
 
 fn parse_canned_response(name: &str) -> Result<CrateResponse> {
     let response = File::open(format!("data/{name}.json"))?;
@@ -58,4 +60,11 @@ fn can_parse_crate_source_log_0_4_17() {
     let log = parse_canned_response("log").unwrap();
     let version = log.version("0.4.17".parse().unwrap()).unwrap();
     let _ = parse_canned_source(version).unwrap();
+}
+
+#[proptest]
+fn routes_dont_alias(route: Route) {
+    let string = route.to_path();
+    let parsed = Route::from_path(&string, &Default::default()).unwrap();
+    assert_eq!(route, parsed);
 }

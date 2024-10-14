@@ -34,6 +34,7 @@ pub type Link<R = Route> = yew_router::components::Link<R>;
 /// must be careful to not alias an existing crate name. For example, adding a route with the path
 /// `/serde` would mask the crate view for the `serde` crate.
 #[derive(Clone, Routable, PartialEq)]
+#[cfg_attr(test, derive(test_strategy::Arbitrary, Debug))]
 pub enum Route {
     /// Home view, shows search bar and summary.
     #[at("/")]

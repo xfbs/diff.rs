@@ -6,6 +6,7 @@ use std::{
 use strum::EnumString;
 
 #[derive(Debug, PartialEq, Eq, EnumString, Clone, strum::Display)]
+#[cfg_attr(test, derive(test_strategy::Arbitrary))]
 #[strum(serialize_all = "kebab-case")]
 pub enum VersionNamed {
     Latest,
@@ -13,9 +14,12 @@ pub enum VersionNamed {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(test, derive(test_strategy::Arbitrary))]
 pub enum VersionId {
     Named(VersionNamed),
+    #[cfg_attr(test, weight(0))]
     Exact(Version),
+    #[cfg_attr(test, weight(0))]
     Requirement(VersionReq),
 }
 
