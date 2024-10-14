@@ -29,23 +29,33 @@ fn AboutText() -> Html {
             </p>
             <h3>{"Acknowledgements"}</h3>
             <p>
-                {"This project would not be possible without the contributions made by the "}
+                {"This project was made possible thanks to contributions made by the "}
                 {"following individuals:"}
                 <ul>
                     <li>
                         <a href="https://github.com/Alphare">{"Alphare"}</a>
-                        {": contributed support for diffing across crates,"}
+                        {": contributed support for diffing across crates"}
                     </li>
                     <li>
                         <a href="https://github.com/eth3lbert">{"eth3lbert"}</a>
-                        {": contributed folding for section which did not change,"}
+                        {": contributed folding for section which did not change"}
                     </li>
                     <li>
                         <a href="https://github.com/mystor">{"mystor"}</a>
-                        {": contributed syntax highlighting and browsing files of a single crate version."}
+                        {": contributed syntax highlighting and browsing files of a single crate version"}
+                    </li>
+                    <li>
+                        <a href="https://github.com/SwishSwushPow">{"SwishSwushPow"}</a>
+                        {": contributed hiding of unchanged files and folders"}
+                    </li>
+                    <li>
+                        <a href="https://github.com/j-mahapatra">{"j-mahapatra"}</a>
+                        {": helped migrate legacy CSS rules to Tailwind CSS"}
                     </li>
                 </ul>
-                {"This list is not exhaustive, check the repository for a full list of contributors. "}
+                {"This list is not exhaustive, check the repository for a full "}
+                <a href="https://github.com/xfbs/diff.rs/graphs/contributors">{"list of contributors"}</a>
+                {". "}
             </p>
             <p>
                 {"Additionally, this tool builds on work done by the Rust ecosystem. It would "}
@@ -72,15 +82,16 @@ fn AboutText() -> Html {
                         {": DEFLATE decompression in pure Rust."}
                     </li>
                 </ul>
-                {"This list is not exhaustive, check the repository for a full list of crates used."}
+                {"This list is not exhaustive, check the repository for a full "}
+                <a href="https://github.com/xfbs/diff.rs/blob/master/Cargo.toml">{"list of crates used"}</a>
+                {"."}
             </p>
-            <h3>{"Privacy"}</h3>
+            <h3>{"License"}</h3>
             <p>
                 {"Licensed under the "}
                 <a href="https://github.com/xfbs/diff.rs/blob/master/LICENSE.md">{"MIT"}</a>
                 {" license."}
             </p>
-
             <h3>{"Privacy"}</h3>
             <p>
                 {"This tool runs entirely in your browser and has no backend. "}
@@ -97,6 +108,7 @@ fn AboutText() -> Html {
                 {"how many active users it has. This service stores some data in anonymized "}
                 {"fashion, according to the "}
                 <a href="https://plausible.io/data-policy">{"Data Policy"}</a>
+                {". "}
                 {"If you use an adblocker, then analytics will likely be blocked. "}
                 {"It does not use cookies, fingerprinting or any other invasive means "}
                 {"to track visitors. You can view the collected data "}
