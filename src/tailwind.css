@@ -4,7 +4,7 @@
 
 @layer components {
     body {
-        @apply bg-white dark:bg-black;
+        @apply bg-white dark:bg-black h-full m-0;
     }
 
     /*
@@ -104,5 +104,37 @@
     .file-subtree {
         @apply ml-3;
         @apply border-l dark:border-slate-800;
+    }
+    
+    main {
+        @apply flex;
+    }
+
+    pre {
+        @apply m-0;
+    }
+
+    #files {
+        @apply h-full;
+    }
+
+    #diff-view {
+        @apply h-full overflow-scroll;
+    }
+
+    .out-of-context {
+        @apply opacity-70;
+    }
+
+    .out-of-context.folded {
+        @apply border border-black p-4 text-center filter-none bg-transparent w-full my-4 cursor-pointer;
+    }
+
+    .folded {
+        @apply my-4;
+    }
+
+    .folding-sticky {
+        @apply cursor-pointer sticky top-0 border border-black p-4 text-center filter-none bg-white w-full my-4 z-0;
     }
 }
