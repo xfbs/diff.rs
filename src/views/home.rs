@@ -27,6 +27,11 @@ pub fn Home() -> Html {
                     <div class="max-w-3xl m-auto">
                         <SearchBar value={""} {onchange} />
                     </div>
+                    <section class="flex flex-row gap-4 w-11/12 mx-auto" style="align-items: stretch;">
+                    < StaticResultColumn sort={SortField::MostRecent} />
+                    < StaticResultColumn sort={SortField::MostDownloaded} />
+                    < StaticResultColumn sort={SortField::JustUpdated} />
+                </section>
                 </Content>
             </div>
             <Footer />

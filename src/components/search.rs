@@ -160,3 +160,81 @@ fn Card(props: &CardProps) -> Html {
         </Link>
     }
 }
+
+#[function_component]
+pub fn StaticResultLoader(props: &StaticResultProp) -> HtmlResult {
+    let info = use_future_with(props.sort.clone(), |q| async move {
+        let response = Request::get("https://crates.io/api/v1/crates")
+            .query([("sort", q.field()), ("per_page", "10")])
+            .build()?
+            .send()
+            .await?;
+        let text = response.json::<SearchResponse>().await?;
+        Ok(text) as anyhow::Result<SearchResponse>
+    })?;
+
+    let html = match &*info {
+        Ok(response) => html! {
+            <section>
+            <div class="flex flex-col gap-2 my-4">
+            { for response.crates.iter().map(|c| html! {<Card details={c.clone()} /> }) }
+            </div></section>
+        },
+        Err(error) => html! {
+            <>
+                {"Error: "}
+                {format!("{error:?}")}
+            </>
+        },
+    };
+
+    Ok(html)
+}
+
+#[function_component]
+pub fn StaticResults(props: &StaticResultProp) -> Html {
+    let fallback = html! {};
+    html! {
+        <Suspense {fallback}>
+            <StaticResultLoader sort={props.sort.clone()} />
+        </Suspense>
+    }
+}
+#[derive(PartialEq, Clone)]
+pub enum SortField {
+    MostDownloaded,
+    MostRecent,
+    JustUpdated,
+}
+
+impl SortField {
+    fn field(&self) -> &str {
+        match self {
+            SortField::MostDownloaded => "downloads",
+            SortField::MostRecent => "new",
+            SortField::JustUpdated => "recent-updates",
+        }
+    }
+    fn title(&self) -> &str {
+        match self {
+            SortField::MostDownloaded => "Most Downloaded",
+            SortField::MostRecent => "New Crates",
+            SortField::JustUpdated => "Just Updated",
+        }
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct StaticResultProp {
+    pub sort: SortField,
+}
+
+#[function_component]
+pub fn StaticResultColumn(props: &StaticResultProp) -> Html {
+    html! {
+        <div class="flex-1">
+            <h2 class="text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">{ props.sort.title() }</h2>
+            <StaticResults  sort={props.sort.clone() }/>
+        </div>
+    }
+}
