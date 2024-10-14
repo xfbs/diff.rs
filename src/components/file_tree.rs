@@ -1,9 +1,12 @@
 use crate::{
+    components::SearchGlass,
     data::{Changes, Entry, Item, VersionDiff},
     Link, Route, VersionId,
 };
 use camino::Utf8PathBuf;
+use implicit_clone::unsync::IString;
 use std::rc::Rc;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -51,6 +54,38 @@ impl ChangeFilter {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Default)]
+enum SearchFilter {
+    #[default]
+    All,
+    Filter(IString),
+}
+
+impl ToString for SearchFilter {
+    fn to_string(&self) -> String {
+        match self {
+            SearchFilter::All => "".to_string(),
+            SearchFilter::Filter(s) => s.to_string(),
+        }
+    }
+}
+
+impl SearchFilter {
+    fn matches(&self, name: &str) -> bool {
+        match self {
+            Self::All => true,
+            Self::Filter(s) => name.to_lowercase().contains(&s.to_lowercase()),
+        }
+    }
+
+    fn match_entry(&self, entry: &Entry) -> bool {
+        match &entry.item {
+            Item::File => self.matches(&entry.name),
+            Item::Dir(e) => self.matches(&entry.name) || e.iter().any(|(_, e)| self.match_entry(e)),
+        }
+    }
+}
+
 #[derive(Properties, PartialEq, Clone)]
 pub struct FileTreeProps {
     pub diff: Rc<VersionDiff>,
@@ -67,6 +102,8 @@ struct SubTreeProps {
     pub prefix: Rc<Utf8PathBuf>,
     #[prop_or_default]
     pub change_filter: ChangeFilter,
+    #[prop_or_default]
+    pub search_filter: SearchFilter,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -79,6 +116,8 @@ struct FileEntryProps {
     pub prefix: Rc<Utf8PathBuf>,
     #[prop_or_default]
     pub change_filter: ChangeFilter,
+    #[prop_or_default]
+    pub search_filter: SearchFilter,
 }
 
 #[function_component]
@@ -127,6 +166,10 @@ fn FileEntry(props: &FileEntryProps) -> Html {
         event.prevent_default();
     };
 
+    if !props.search_filter.match_entry(&props.entry) {
+        return html! { <></> };
+    }
+
     html! {
         <>
         <Link to={route} classes={classes!("file-entry", current.then_some("active"))}>
@@ -161,6 +204,7 @@ fn FileEntry(props: &FileEntryProps) -> Html {
                 prefix={props.prefix.clone()}
                 active={props.active.clone()}
                 change_filter={props.change_filter}
+                search_filter={props.search_filter.clone()}
             />
         }
         </>
@@ -187,6 +231,7 @@ fn SubTree(props: &SubTreeProps) -> Html {
             entries
                 .iter()
                 .filter(|(_, entry)| props.change_filter.matches(entry.changes))
+                .filter(|(_, entry)| props.search_filter.matches(&entry.name) || entry.item.is_dir())
                 .map(|(key, entry)| html! {
                     <FileEntry
                         key={key.to_string()}
@@ -195,6 +240,7 @@ fn SubTree(props: &SubTreeProps) -> Html {
                         prefix={prefix.clone()}
                         active={props.active.clone()}
                         change_filter={props.change_filter}
+                        search_filter={props.search_filter.clone()}
                     />
                 })
                 .collect::<Html>()
@@ -219,6 +265,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
         }
     };
 
+    let search_filter = use_state(|| SearchFilter::All);
     let prefix = Rc::new(Utf8PathBuf::default());
     let active = Rc::new(props.path.clone());
 
@@ -234,7 +281,8 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
             <div class="header">
                 <span></span>
                 <span class="grow"></span>
-                <div class="button-group" role="group">
+            {get_file_name_search_bar(&search_filter)}
+            <div class="button-group" role="group">
                     <button
                         type="button"
                         class={classes!("first", change_filter.is_all().then_some("active"))}
@@ -253,6 +301,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
             entries
                 .into_iter()
                 .filter(|(_, entry)| change_filter.matches(entry.changes))
+                .filter(|(_, entry)| search_filter.matches(&entry.name) || entry.item.is_dir())
                 .map(|(key, entry)| html! {
                     <FileEntry
                         {key}
@@ -261,10 +310,35 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
                         active={active.clone()}
                         context={context.clone()}
                         change_filter={*change_filter}
+                        search_filter={(*search_filter).clone()}
                     />
                 })
                 .collect::<Html>()
         }
         </div>
+    }
+}
+
+fn get_file_name_search_bar(search_filter: &UseStateHandle<SearchFilter>) -> Html {
+    let oninput = {
+        let search_filter = search_filter.clone();
+        move |event: InputEvent| {
+            search_filter.set(SearchFilter::Filter(
+                event
+                    .target_unchecked_into::<HtmlInputElement>()
+                    .value()
+                    .into(),
+            ));
+        }
+    };
+    html! {
+        <>
+        <div class="relative w-full">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <SearchGlass />
+            </div>
+            <input type="search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Filter..." value={search_filter.to_string()} {oninput}  />
+        </div>
+        </>
     }
 }
