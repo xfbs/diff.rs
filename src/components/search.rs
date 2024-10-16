@@ -1,11 +1,14 @@
 use crate::{
-    data::{CrateDetail, SearchResponse},
+    data::{CrateDetail, SearchResponse, SummaryResponse},
     Link, Route,
 };
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
 use web_sys::HtmlInputElement;
-use yew::{prelude::*, suspense::use_future_with};
+use yew::{
+    prelude::*,
+    suspense::{use_future, use_future_with},
+};
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
@@ -162,23 +165,18 @@ fn Card(props: &CardProps) -> Html {
 }
 
 #[function_component]
-pub fn StaticResultLoader(props: &StaticResultProp) -> HtmlResult {
-    let info = use_future_with(props.sort.clone(), |q| async move {
-        let response = Request::get("https://crates.io/api/v1/crates")
-            .query([("sort", q.field()), ("per_page", "10")])
+pub fn SummaryLoader(summary: &StaticResultPropNew) -> HtmlResult {
+    let info = use_future(|| async move {
+        let response = Request::get("https://crates.io/api/v1/summary")
             .build()?
             .send()
             .await?;
-        let text = response.json::<SearchResponse>().await?;
-        Ok(text) as anyhow::Result<SearchResponse>
+        let text = response.json::<SummaryResponse>().await?;
+        Ok(text) as anyhow::Result<SummaryResponse>
     })?;
-
     let html = match &*info {
         Ok(response) => html! {
-            <section>
-            <div class="flex flex-col gap-2 my-4">
-            { for response.crates.iter().map(|c| html! {<Card details={c.clone()} /> }) }
-            </div></section>
+            for summary.category.iter().map(|sum_categorie| summary_column(response, sum_categorie ))
         },
         Err(error) => html! {
             <>
@@ -191,50 +189,64 @@ pub fn StaticResultLoader(props: &StaticResultProp) -> HtmlResult {
     Ok(html)
 }
 
-#[function_component]
-pub fn StaticResults(props: &StaticResultProp) -> Html {
-    let fallback = html! {};
-    html! {
-        <Suspense {fallback}>
-            <StaticResultLoader sort={props.sort.clone()} />
-        </Suspense>
+fn summary_column(summary: &SummaryResponse, categorie: &SummaryCategory) -> Html {
+    if summary.get(categorie).is_empty() {
+        html! {}
+    } else {
+        html! {
+            <div class="flex-1">
+            <h2 class="text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">{ categorie.title() }</h2>
+                    { column_section (summary.get(categorie)) }
+            </div>
+        }
     }
 }
+
+fn column_section(cards: &[CrateDetail]) -> Html {
+    html! {
+        <section>
+            <div class="flex flex-col gap-2 my-4">
+                { for cards.iter().cloned().map(|c| html! {<Card details={c} /> }) }
+            </div>
+        </section>
+    }
+}
+
 #[derive(PartialEq, Clone)]
-pub enum SortField {
+pub enum SummaryCategory {
     MostDownloaded,
     MostRecent,
     JustUpdated,
+    RecentDownloads,
 }
 
-impl SortField {
-    fn field(&self) -> &str {
-        match self {
-            SortField::MostDownloaded => "downloads",
-            SortField::MostRecent => "new",
-            SortField::JustUpdated => "recent-updates",
-        }
-    }
+impl SummaryCategory {
     fn title(&self) -> &str {
         match self {
-            SortField::MostDownloaded => "Most Downloaded",
-            SortField::MostRecent => "New Crates",
-            SortField::JustUpdated => "Just Updated",
+            SummaryCategory::MostDownloaded => "Most Downloaded",
+            SummaryCategory::MostRecent => "New Crates",
+            SummaryCategory::JustUpdated => "Just Updated",
+            SummaryCategory::RecentDownloads => "Most Recent Downloads",
         }
     }
 }
 
 #[derive(Properties, PartialEq)]
-pub struct StaticResultProp {
-    pub sort: SortField,
+pub struct StaticResultPropNew {
+    pub category: Vec<SummaryCategory>,
 }
 
 #[function_component]
-pub fn StaticResultColumn(props: &StaticResultProp) -> Html {
+pub fn DefaultSummarySection() -> Html {
     html! {
-        <div class="flex-1">
-            <h2 class="text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">{ props.sort.title() }</h2>
-            <StaticResults  sort={props.sort.clone() }/>
-        </div>
+        <Suspense fallback = {html!{}}>
+            <section class="flex flex-row gap-4 w-11/12 mx-auto">
+                <SummaryLoader category={ vec![
+                    SummaryCategory::MostRecent,
+                    SummaryCategory::MostDownloaded,
+                    SummaryCategory::JustUpdated,
+                ]}/>
+            </section >
+        </Suspense>
     }
 }

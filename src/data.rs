@@ -26,6 +26,26 @@ pub struct SearchResponse {
     pub crates: Vec<CrateDetail>,
 }
 
+/// Crates.io response for summary fetch
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct SummaryResponse {
+    pub just_updated: Vec<CrateDetail>,
+    pub most_downloaded: Vec<CrateDetail>,
+    pub most_recently_downloaded: Vec<CrateDetail>,
+    pub new_crates: Vec<CrateDetail>,
+}
+
+impl SummaryResponse {
+    pub fn get(&self, cat: &super::components::SummaryCategory) -> &Vec<CrateDetail> {
+        match cat {
+            super::components::SummaryCategory::JustUpdated => &self.just_updated,
+            super::components::SummaryCategory::MostDownloaded => &self.most_downloaded,
+            super::components::SummaryCategory::RecentDownloads => &self.most_recently_downloaded,
+            super::components::SummaryCategory::MostRecent => &self.new_crates,
+        }
+    }
+}
+
 /// Create info struct, returned as part of the crates.io response.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateDetail {
