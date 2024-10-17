@@ -123,7 +123,7 @@ struct FileEntryProps {
 
 #[derive(Debug, Properties, Clone, Copy, PartialEq)]
 struct ExpandIconProps {
-    pub is_expanded: bool
+    pub is_expanded: bool,
 }
 
 #[function_component]
