@@ -4,7 +4,7 @@ use yew::prelude::*;
 #[function_component]
 fn AboutText() -> Html {
     html! {
-        <div class="prose max-w-2xl m-auto p-4 pt-12">
+        <div class="prose prose-slate dark:prose-invert max-w-2xl m-auto p-4 pt-12">
             <h2>{"About"}</h2>
             <p>
                 {"Web-based tool to view the differences between Rust crate versions. "}
@@ -51,6 +51,14 @@ fn AboutText() -> Html {
                     <li>
                         <a href="https://github.com/j-mahapatra">{"j-mahapatra"}</a>
                         {": helped migrate legacy CSS rules to Tailwind CSS"}
+                    </li>
+                    <li>
+                        <a href="https://github.com/HWienhold">{"HWienhold"}</a>
+                        {": added file filtering and summary page"}
+                    </li>
+                    <li>
+                        <a href="https://github.com/tverghis">{"tverghis"}</a>
+                        {": added folder expansion and collapsing"}
                     </li>
                 </ul>
                 {"This list is not exhaustive, check the repository for a full "}
