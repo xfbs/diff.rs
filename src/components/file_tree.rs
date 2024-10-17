@@ -81,6 +81,11 @@ struct FileEntryProps {
     pub change_filter: ChangeFilter,
 }
 
+#[derive(Debug, Properties, Clone, Copy, PartialEq)]
+struct ExpandIconProps {
+    pub is_expanded: bool
+}
+
 #[function_component]
 fn FolderIcon() -> Html {
     // from https://www.svgrepo.com/svg/491619/doc
@@ -102,9 +107,15 @@ fn FileIcon() -> Html {
 }
 
 #[function_component]
-fn ExpandIcon() -> Html {
+fn ExpandIcon(props: &ExpandIconProps) -> Html {
+    let rotate_class = if props.is_expanded {
+        "rotate-90"
+    } else {
+        "rotate-0"
+    };
+
     html! {
-        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class={rotate_class}>
             <path fill-rule="evenodd" clip-rule="evenodd" d="M8.79289 6.29289C9.18342 5.90237 9.81658 5.90237 10.2071 6.29289L15.2071 11.2929C15.5976 11.6834 15.5976 12.3166 15.2071 12.7071L10.2071 17.7071C9.81658 18.0976 9.18342 18.0976 8.79289 17.7071C8.40237 17.3166 8.40237 16.6834 8.79289 16.2929L13.0858 12L8.79289 7.70711C8.40237 7.31658 8.40237 6.68342 8.79289 6.29289Z" />
         </svg>
     }
@@ -123,16 +134,20 @@ fn FileEntry(props: &FileEntryProps) -> Html {
 
     let route = props.context.file_route(path.clone());
 
-    let expand = |event: MouseEvent| {
-        event.prevent_default();
+    let toggle_expand = {
+        let expanded = expanded.clone();
+        Callback::from(move |event: MouseEvent| {
+            event.prevent_default();
+            expanded.set(!*expanded);
+        })
     };
 
     html! {
         <>
         <Link to={route} classes={classes!("file-entry", current.then_some("active"))}>
-            <button class={classes!("toggle", (*expanded).then_some("active"))} onclick={expand}>
+            <button class={classes!("toggle", (*expanded).then_some("active"))} onclick={toggle_expand}>
                 if props.entry.item.is_dir() {
-                    <ExpandIcon />
+                    <ExpandIcon is_expanded={*expanded} />
                 }
             </button>
             <div class="icon">
@@ -154,7 +169,7 @@ fn FileEntry(props: &FileEntryProps) -> Html {
                 }
             </div>
         </Link>
-        if props.entry.item.is_dir() {
+        if props.entry.item.is_dir() && *expanded {
             <SubTree
                 entry={props.entry.clone()}
                 context={props.context.clone()}
