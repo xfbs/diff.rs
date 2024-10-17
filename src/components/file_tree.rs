@@ -61,6 +61,7 @@ enum SearchFilter {
     Filter(IString),
 }
 
+#[allow(clippy::to_string_trait_impl)]
 impl ToString for SearchFilter {
     fn to_string(&self) -> String {
         match self {
