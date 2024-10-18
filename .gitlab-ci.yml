@@ -7,7 +7,7 @@ stages:
 
 variables:
   RUST_VERSION: "1.81"
-  TRUNK_VERSION: "0.20.3"
+  TRUNK_VERSION: "0.21.1"
 
 # Run unit tests
 test:

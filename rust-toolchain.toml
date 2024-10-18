@@ -1,0 +1,5 @@
+[toolchain]
+# there is currently an issue when building diff.rs with rust 1.82. can bump
+# this once this is resolved: 
+channel = "1.81"
+targets = ["wasm32-unknown-unknown"]
