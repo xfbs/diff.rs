@@ -5,17 +5,21 @@ stages:
   - build
   - publish
 
+variables:
+  RUST_VERSION: "1.81"
+  TRUNK_VERSION: "0.20.3"
+
 # Run unit tests
 test:
   stage: check
-  image: rust
+  image: rust:$RUST_VERSION
   script:
     - cargo test
 
 # Check style by running clippy and rustfmt.
 style:
   stage: check
-  image: rust
+  image: rust:$RUST_VERSION
   script:
     - rustup component add clippy
     - rustup toolchain add nightly
@@ -34,9 +38,7 @@ style:
 # that the next CI stage has access to it.
 build:
   stage: build
-  image: rust
-  variables:
-    TRUNK_VERSION: 0.20.3
+  image: rust:$RUST_VERSION
   before_script:
     - rustup target add wasm32-unknown-unknown
     - wget -qO- https://github.com/thedodd/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
