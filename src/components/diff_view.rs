@@ -137,8 +137,8 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
         (false, true) => "in-context",
         (false, false) => "out-of-context",
     };
-    let group_start_index = props.group_start_index;
-    let end_index = group_start_index + props.group.len();
+    let group_start_index = props.group_start_index + 1;
+    let end_index = group_start_index + props.group.len() - 1;
 
     if *folded {
         html! {
