@@ -165,11 +165,9 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
                     };
                     html! {
                         <div style={format!("background-color:{bg_color}")}>
-                            <span class="select-none">
                             {
                                 format!("{overall_index:>padding$} {sign} ")
                             }
-                            </span>
                             {
                                 change.iter().map(|(style, text)| {
                                     let style = syntect_style_to_css(style);
