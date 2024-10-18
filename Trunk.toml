@@ -1,3 +1,10 @@
+trunk-version = "^0.21.1"
+
+[build]
+# minify assets on release build
+minify = "on_release"
+# use `cargo update` to update cargo lockfile
+locked = true
 
 # the versions are specified here to get reproducible builds, make sure to
 # bump the versions of these tools occasionally.
