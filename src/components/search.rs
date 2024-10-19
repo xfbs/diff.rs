@@ -1,5 +1,5 @@
 use crate::{
-    data::{CrateDetail, SearchResponse, SummaryResponse},
+    data::{CrateDetail, SearchResponse, SummaryCategory, SummaryResponse},
     Link, Route,
 };
 use gloo_net::http::Request;
@@ -149,6 +149,22 @@ pub fn SearchResultsLoader(props: &SearchResultsProps) -> HtmlResult {
     Ok(html)
 }
 
+#[function_component]
+fn GitIcon() -> Html {
+    html! {
+        <svg class="inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M15 4.75a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0ZM2.5 19.25a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0Zm0-14.5a3.25 3.25 0 1 1 6.5 0 3.25 3.25 0 0 1-6.5 0ZM5.75 6.5a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 5.75 6.5Zm0 14.5a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 5.75 21Zm12.5-14.5a1.75 1.75 0 1 0-.001-3.501A1.75 1.75 0 0 0 18.25 6.5Z"></path><path d="M5.75 16.75A.75.75 0 0 1 5 16V8a.75.75 0 0 1 1.5 0v8a.75.75 0 0 1-.75.75Z"></path><path d="M17.5 8.75v-1H19v1a3.75 3.75 0 0 1-3.75 3.75h-7a1.75 1.75 0 0 0-1.75 1.75H5A3.25 3.25 0 0 1 8.25 11h7a2.25 2.25 0 0 0 2.25-2.25Z"></path></svg>
+    }
+}
+
+#[function_component]
+fn DocsRsIcon() -> Html {
+    html! {
+        <svg class="inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1em" height="1em" fill="currentColor">
+            <path d="M488.6 250.2L392 214V105.5c0-15-9.3-28.4-23.4-33.7l-100-37.5c-8.1-3.1-17.1-3.1-25.3 0l-100 37.5c-14.1 5.3-23.4 18.7-23.4 33.7V214l-96.6 36.2C9.3 255.5 0 268.9 0 283.9V394c0 13.6 7.7 26.1 19.9 32.2l100 50c10.1 5.1 22.1 5.1 32.2 0l103.9-52 103.9 52c10.1 5.1 22.1 5.1 32.2 0l100-50c12.2-6.1 19.9-18.6 19.9-32.2V283.9c0-15-9.3-28.4-23.4-33.7zM358 214.8l-85 31.9v-68.2l85-37v73.3zM154 104.1l102-38.2 102 38.2v.6l-102 41.4-102-41.4v-.6zm84 291.1l-85 42.5v-79.1l85-38.8v75.4zm0-112l-102 41.4-102-41.4v-.6l102-38.2 102 38.2v.6zm240 112l-85 42.5v-79.1l85-38.8v75.4zm0-112l-102 41.4-102-41.4v-.6l102-38.2 102 38.2v.6z"></path>
+        </svg>
+    }
+}
+
 #[derive(Properties, PartialEq)]
 struct CardProps {
     pub details: CrateDetail,
@@ -156,10 +172,21 @@ struct CardProps {
 
 #[function_component]
 fn Card(props: &CardProps) -> Html {
+    let link = Route::Crate {
+        krate: props.details.id.clone(),
+    };
     html! {
-        <Link to={Route::Crate { krate: props.details.id.clone() }} classes="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-            <h5 class="mb-2 mt-0 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{&props.details.id}{" "}<span class="text-gray-600">{"v"}{&props.details.max_version}</span></h5>
-            <p class="font-normal text-gray-700 dark:text-gray-400">{&props.details.description}</p>
+        <Link to={link} classes="card">
+            <div class="header">
+                <h3 class="name">{&props.details.id}</h3>
+                <span class="version">{props.details.max_version.to_string()}</span>
+                <span class="grow"></span>
+                <a class="icon" href={format!("https://docs.rs/{}/{}", &props.details.id, &props.details.max_version)}><DocsRsIcon /></a>
+                if let Some(url) = &props.details.repository {
+                    <a class="icon" href={url.to_string()}><GitIcon /></a>
+                }
+            </div>
+            <p class="description">{&props.details.description}</p>
         </Link>
     }
 }
@@ -174,9 +201,16 @@ pub fn SummaryLoader(summary: &StaticResultPropNew) -> HtmlResult {
         let text = response.json::<SummaryResponse>().await?;
         Ok(text) as anyhow::Result<SummaryResponse>
     })?;
+
     let html = match &*info {
         Ok(response) => html! {
-            for summary.category.iter().map(|sum_categorie| summary_column(response, sum_categorie ))
+            <section class="summary">
+            {
+                for summary.category.iter().copied().map(|category| html! {
+                    <SummaryColumn {category} crates={response.get(category).clone()} />
+                })
+            }
+            </section>
         },
         Err(error) => html! {
             <>
@@ -189,45 +223,27 @@ pub fn SummaryLoader(summary: &StaticResultPropNew) -> HtmlResult {
     Ok(html)
 }
 
-fn summary_column(summary: &SummaryResponse, categorie: &SummaryCategory) -> Html {
-    if summary.get(categorie).is_empty() {
-        html! {}
-    } else {
-        html! {
-            <div class="flex-1">
-            <h2 class="text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white">{ categorie.title() }</h2>
-                    { column_section (summary.get(categorie)) }
-            </div>
-        }
-    }
+#[derive(Properties, PartialEq)]
+pub struct SummaryColumnProps {
+    category: SummaryCategory,
+    crates: Vec<CrateDetail>,
 }
 
-fn column_section(cards: &[CrateDetail]) -> Html {
+#[function_component]
+fn SummaryColumn(props: &SummaryColumnProps) -> Html {
+    if props.crates.is_empty() {
+        return html! {};
+    }
+
     html! {
-        <section>
-            <div class="flex flex-col gap-2 my-4">
-                { for cards.iter().cloned().map(|c| html! {<Card details={c} /> }) }
-            </div>
-        </section>
-    }
-}
-
-#[derive(PartialEq, Clone)]
-pub enum SummaryCategory {
-    MostDownloaded,
-    MostRecent,
-    JustUpdated,
-    RecentDownloads,
-}
-
-impl SummaryCategory {
-    fn title(&self) -> &str {
-        match self {
-            SummaryCategory::MostDownloaded => "Most Downloaded",
-            SummaryCategory::MostRecent => "New Crates",
-            SummaryCategory::JustUpdated => "Just Updated",
-            SummaryCategory::RecentDownloads => "Most Recent Downloads",
-        }
+        <div class="column">
+            <h2 class="title">
+                { props.category.title() }
+            </h2>
+            <section class="results">
+                { for props.crates.iter().cloned().map(|c| html! {<Card details={c} /> }) }
+            </section>
+        </div>
     }
 }
 
@@ -238,15 +254,16 @@ pub struct StaticResultPropNew {
 
 #[function_component]
 pub fn DefaultSummarySection() -> Html {
+    let fallback = html! {
+        {"Loading"}
+    };
     html! {
-        <Suspense fallback = {html!{}}>
-            <section class="flex flex-row gap-4 w-11/12 mx-auto">
-                <SummaryLoader category={ vec![
-                    SummaryCategory::MostRecent,
-                    SummaryCategory::MostDownloaded,
-                    SummaryCategory::JustUpdated,
-                ]}/>
-            </section >
+        <Suspense {fallback}>
+            <SummaryLoader category={ vec![
+                SummaryCategory::MostRecent,
+                SummaryCategory::MostDownloaded,
+                SummaryCategory::JustUpdated,
+            ]}/>
         </Suspense>
     }
 }

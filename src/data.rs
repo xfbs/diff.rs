@@ -35,13 +35,32 @@ pub struct SummaryResponse {
     pub new_crates: Vec<CrateDetail>,
 }
 
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum SummaryCategory {
+    MostDownloaded,
+    MostRecent,
+    JustUpdated,
+    RecentDownloads,
+}
+
+impl SummaryCategory {
+    pub fn title(&self) -> &str {
+        match self {
+            SummaryCategory::MostDownloaded => "Most Downloaded",
+            SummaryCategory::MostRecent => "New Crates",
+            SummaryCategory::JustUpdated => "Just Updated",
+            SummaryCategory::RecentDownloads => "Most Recent Downloads",
+        }
+    }
+}
+
 impl SummaryResponse {
-    pub fn get(&self, cat: &super::components::SummaryCategory) -> &Vec<CrateDetail> {
+    pub fn get(&self, cat: SummaryCategory) -> &Vec<CrateDetail> {
         match cat {
-            super::components::SummaryCategory::JustUpdated => &self.just_updated,
-            super::components::SummaryCategory::MostDownloaded => &self.most_downloaded,
-            super::components::SummaryCategory::RecentDownloads => &self.most_recently_downloaded,
-            super::components::SummaryCategory::MostRecent => &self.new_crates,
+            SummaryCategory::JustUpdated => &self.just_updated,
+            SummaryCategory::MostDownloaded => &self.most_downloaded,
+            SummaryCategory::RecentDownloads => &self.most_recently_downloaded,
+            SummaryCategory::MostRecent => &self.new_crates,
         }
     }
 }
@@ -50,12 +69,16 @@ impl SummaryResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CrateDetail {
     pub id: String,
-    pub max_version: String,
-    pub max_stable_version: Option<String>,
+    pub max_version: Version,
+    pub max_stable_version: Option<Version>,
+    pub newest_version: Version,
     pub description: String,
     pub downloads: u64,
+    pub recent_downloads: Option<u64>,
     pub exact_match: bool,
     pub homepage: Option<Url>,
+    pub repository: Option<Url>,
+    pub documentation: Option<Url>,
 }
 
 /// Crates.io response type for crate lookup
