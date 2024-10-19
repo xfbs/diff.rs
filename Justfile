@@ -34,3 +34,10 @@ format:
 # Launch local debug server
 serve:
     trunk serve
+
+# Run checks (same as in CI)
+ci:
+    cargo +nightly fmt --check
+    cargo clippy -- -D warnings
+    cargo test
+    trunk build --release

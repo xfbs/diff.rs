@@ -105,7 +105,7 @@
         @apply ml-3;
         @apply border-l dark:border-slate-800;
     }
-    
+
     main {
         @apply flex;
     }
@@ -119,22 +119,85 @@
     }
 
     #diff-view {
-        @apply h-full overflow-scroll;
+        @apply h-full overflow-hidden;
     }
 
-    .out-of-context {
-        @apply opacity-70;
+    .diff-view {
+        @apply rounded-lg border-solid border border-gray-200 dark:border-gray-600 overflow-clip my-2;
     }
 
-    .out-of-context.folded {
-        @apply border border-black p-4 text-center filter-none bg-transparent w-full my-4 cursor-pointer;
+    .diff-view .header {
+        @apply bg-[#f6f8fa] dark:bg-gray-900 h-8 border-b border-gray-200 dark:border-gray-600 flex flex-nowrap items-center gap-2 px-2 dark:text-gray-200;
     }
 
-    .folded {
-        @apply my-4;
+    .diff-view .header .filename {
+        @apply font-mono;
     }
 
-    .folding-sticky {
-        @apply cursor-pointer sticky top-0 border border-black p-4 text-center filter-none bg-white w-full my-4 z-0;
+    .diff-view .content {
+    }
+
+    .diff-view .content .unified {
+        @apply grid grid-cols-[auto_auto_auto_1fr] font-mono;
+    }
+
+    .diff-view .content .unified .expand {
+        @apply contents;
+    }
+
+    .diff-view .content .unified .expand .button {
+        @apply col-span-2;
+        @apply text-center;
+        @apply bg-blue-100 dark:bg-blue-900;
+        @apply text-blue-500 dark:text-blue-500;
+    }
+
+    .diff-view .content .unified .expand .info {
+        @apply col-span-2;
+        @apply bg-blue-50;
+        @apply text-gray-500;
+        @apply pl-8;
+        @apply text-left;
+    }
+
+    .diff-view .content .unified .line {
+        @apply contents;
+    }
+
+    .diff-view .content .unified .line .line-number {
+        @apply text-right px-2;
+        @apply text-gray-500 dark:text-gray-500;
+        @apply bg-gray-50 dark:bg-gray-900;
+        @apply select-none;
+    }
+
+    .diff-view .content .unified .line .change-icon {
+        @apply px-2;
+        @apply select-none;
+    }
+
+    .diff-view .content .unified .line .code-line {
+        @apply whitespace-pre-wrap;
+        @apply px-2;
+    }
+
+    .diff-view .content .unified .line.deletion > * {
+        @apply bg-red-100;
+    }
+
+    .diff-view .content .unified .line.deletion .line-number {
+        @apply bg-red-200 dark:bg-red-900;
+    }
+
+    .diff-view .content .unified .line.insertion > * {
+        @apply bg-green-100;
+    }
+
+    .diff-view .content .unified .line.insertion .line-number {
+        @apply bg-green-200 dark:bg-green-900;
+    }
+
+
+    .diff-view .content .split {
     }
 }

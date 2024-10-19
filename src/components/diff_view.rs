@@ -10,6 +10,7 @@ use syntect::highlighting::Style;
 use yew::prelude::*;
 
 /// Contains information about contiguous changes
+#[derive(PartialEq, Clone)]
 struct DiffGroupInfo {
     /// The actual changes
     group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
@@ -23,6 +24,13 @@ struct DiffGroupInfo {
 pub struct DiffViewProps {
     pub path: Utf8PathBuf,
     pub diff: Rc<VersionDiff>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum DiffStyle {
+    #[default]
+    Unified,
+    Split,
 }
 
 #[function_component]
@@ -81,37 +89,83 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
         });
     }
 
-    let mut overall_index = 0;
-    // Max of digits for a line number of this file
-    let padding = file_diff.changes.len().max(1).to_string().len();
-
     html! {
-        <div class="rounded-lg border-solid border border-gray-200 dark:border-gray-600 overflow-clip my-2">
-            <div class="bg-[#f6f8fa] dark:bg-gray-900 h-8 border-b border-gray-200 dark:border-gray-600 flex flex-nowrap items-center gap-2 px-2 dark:text-gray-200">
-                <span class="font-mono">{props.path.file_name().unwrap_or("")}</span>
+        <div class="diff-view">
+            <div class="header">
+                <span class="filename">{props.path.file_name().unwrap_or("")}</span>
             </div>
-            <div class="p-2 overflow-x-scroll bg-white">
-                <pre class="bg-white">
-                {
-                    stack.iter()
-                        .map(|DiffGroupInfo {group, range, in_context}| {
-                            let res = html!{
-                                <DiffLineGroup
-                                    key={format!("{:?}", range)}
-                                    group={group.clone()}
-                                    {in_context}
-                                    group_start_index={overall_index}
-                                    {padding}
-                                />
-                            };
-                            overall_index += group.len();
-                            res
-                        })
-                        .collect::<Html>()
-                }
-                </pre>
+            <div class="content">
+                <UnifiedDiffView {stack} />
             </div>
         </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct AnyDiffViewProps {
+    stack: Vec<DiffGroupInfo>,
+}
+
+#[function_component]
+pub fn UnifiedDiffView(props: &AnyDiffViewProps) -> Html {
+    let mut overall_index = 0;
+    html! {
+        <div class="overflow-x-scroll bg-white">
+            <div class="unified">
+            {
+                props.stack.iter()
+                    .map(|DiffGroupInfo {group, range, in_context}| {
+                        let res = html!{
+                            <DiffLineGroup
+                                key={format!("{:?}", range)}
+                                group={group.clone()}
+                                {in_context}
+                                group_start_index={overall_index}
+                            />
+                        };
+                        overall_index += group.len();
+                        res
+                    })
+                    .collect::<Html>()
+            }
+            </div>
+        </div>
+    }
+}
+
+#[function_component]
+pub fn SplitDiffView(props: &AnyDiffViewProps) -> Html {
+    let mut overall_index = 0;
+    html! {
+        <div class="p-2 overflow-x-scroll bg-white">
+            <pre class="bg-white">
+            {
+                props.stack.iter()
+                    .map(|DiffGroupInfo {group, range, in_context}| {
+                        let res = html!{
+                            <DiffLineGroup
+                                key={format!("{:?}", range)}
+                                group={group.clone()}
+                                {in_context}
+                                group_start_index={overall_index}
+                            />
+                        };
+                        overall_index += group.len();
+                        res
+                    })
+                    .collect::<Html>()
+            }
+            </pre>
+        </div>
+    }
+}
+
+#[function_component]
+fn ExpandIcon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" height="1em" width="1em" class="inline">
+            <path d="m8.177.677 2.896 2.896a.25.25 0 0 1-.177.427H8.75v1.25a.75.75 0 0 1-1.5 0V4H5.104a.25.25 0 0 1-.177-.427L7.823.677a.25.25 0 0 1 .354 0ZM7.25 10.75a.75.75 0 0 1 1.5 0V12h2.146a.25.25 0 0 1 .177.427l-2.896 2.896a.25.25 0 0 1-.354 0l-2.896-2.896A.25.25 0 0 1 5.104 12H7.25v-1.25Zm-5-2a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM6 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 6 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM12 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 12 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5Z"></path>
+        </svg>
     }
 }
 
@@ -120,69 +174,75 @@ pub struct DiffLineGroupProps {
     group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     in_context: bool,
     group_start_index: usize,
-    padding: usize,
 }
 
 #[function_component]
 pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
     let folded = use_state(|| !props.in_context);
-    let padding = props.padding;
     let onclick = {
         let folded = folded.clone();
         Callback::from(move |_| folded.set(!*folded))
-    };
-    let class = match (*folded, props.in_context) {
-        (true, true) => "folded in-context",
-        (true, false) => "folded out-of-context",
-        (false, true) => "in-context",
-        (false, false) => "out-of-context",
     };
     let group_start_index = props.group_start_index + 1;
     let end_index = group_start_index + props.group.len() - 1;
 
     if *folded {
         html! {
-            <button class={class} {onclick}>
-                {format!("Show lines {group_start_index} to {end_index}")}
-            </button>
+            <div class="expand">
+                <button class={classes!("button")} onclick={onclick.clone()}>
+                    <ExpandIcon />
+                </button>
+                <button class={classes!("info")} {onclick}>
+                    {format!("Show lines {group_start_index} to {end_index}")}
+                </button>
+            </div>
         }
     } else {
         html! {
             <>
             if !props.in_context {
-                <button class="folding-sticky" {onclick}>
-                    {format!("Fold lines {group_start_index} to {end_index}")}
-                </button>
             }
-            <div class={class}>
             {
                 props.group.iter().enumerate().map(|(index, (tag, change))| {
                     let overall_index = group_start_index + index;
-                    let (sign, bg_color) = match tag {
-                        ChangeTag::Delete => ("-", "#ffebe9"),
-                        ChangeTag::Insert => ("+", "#dafbe1"),
-                        ChangeTag::Equal => (" ", "default"),
+                    let (sign, class) = match tag {
+                        ChangeTag::Delete => ("-", "deletion"),
+                        ChangeTag::Insert => ("+", "insertion"),
+                        ChangeTag::Equal => (" ", "unchanged"),
                     };
                     html! {
-                        <div style={format!("background-color:{bg_color}")}>
-                            {
-                                format!("{overall_index:>padding$} {sign} ")
-                            }
-                            {
-                                change.iter().map(|(style, text)| {
-                                    let style = syntect_style_to_css(style);
-                                    let contents = String::from_utf8_lossy(&text[..]);
-                                    html! {
-                                        <span style={style}>{contents}</span>
-                                    }
-                                })
-                                .collect::<Html>()
-                            }
+                        <div class={classes!("line", class)}>
+                            <div class="line-number">
+                                {
+                                    format!("{overall_index}")
+                                }
+                            </div>
+                            <div class="line-number">
+                                {
+                                    format!("{overall_index}")
+                                }
+                            </div>
+                            <div class="change-icon">
+                                {
+                                    format!("{sign}")
+                                }
+                            </div>
+                            <div class="code-line">
+                                {
+                                    change.iter().map(|(style, text)| {
+                                        let style = syntect_style_to_css(style);
+                                        let contents = String::from_utf8_lossy(&text[..]);
+                                        html! {
+                                            <span style={style}>{contents}</span>
+                                        }
+                                    })
+                                    .collect::<Html>()
+                                }
+                            </div>
                         </div>
                     }
                 }).collect::<Html>()
             }
-            </div>
             </>
         }
     }
