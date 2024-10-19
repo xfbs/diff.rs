@@ -114,7 +114,9 @@ impl CrateResponse {
         match version {
             VersionId::Exact(version) => self.versions.iter().find(|v| v.num == version),
             VersionId::Named(VersionNamed::Latest) => self.versions.first(),
-            VersionId::Named(VersionNamed::Previous) => self.versions.get(1),
+            VersionId::Named(VersionNamed::Previous) => {
+                self.versions.get(1).or(self.versions.first())
+            }
             VersionId::Requirement(req) => self
                 .versions
                 .iter()
