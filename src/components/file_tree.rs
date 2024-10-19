@@ -281,9 +281,9 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
 
     let context = Rc::new(Context {
         old_krate: props.diff.left.version.krate.clone(),
-        old_version: props.diff.left.version.num.clone().into(),
+        old_version: props.diff.left.version.version.clone().into(),
         new_krate: props.diff.right.version.krate.clone(),
-        new_version: props.diff.right.version.num.clone().into(),
+        new_version: props.diff.right.version.version.clone().into(),
     });
 
     html! {

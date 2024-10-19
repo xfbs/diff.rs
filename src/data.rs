@@ -89,7 +89,8 @@ pub struct VersionInfo {
     pub krate: String,
     pub dl_path: String,
     pub yanked: bool,
-    pub num: Version,
+    #[serde(rename = "num")]
+    pub version: Version,
     //pub id: u64,
     //pub crate_size: Option<u64>,
     //pub downloads: u64,
@@ -112,7 +113,7 @@ impl CrateResponse {
 
     pub fn version(&self, version: VersionId) -> Option<&VersionInfo> {
         match version {
-            VersionId::Exact(version) => self.versions.iter().find(|v| v.num == version),
+            VersionId::Exact(version) => self.versions.iter().find(|v| v.version == version),
             VersionId::Named(VersionNamed::Latest) => self.versions.first(),
             VersionId::Named(VersionNamed::Previous) => {
                 self.versions.get(1).or(self.versions.first())
@@ -120,8 +121,8 @@ impl CrateResponse {
             VersionId::Requirement(req) => self
                 .versions
                 .iter()
-                .filter(|v| req.matches(&v.num))
-                .max_by_key(|v| &v.num),
+                .filter(|v| req.matches(&v.version))
+                .max_by_key(|v| &v.version),
         }
     }
 }
@@ -131,11 +132,11 @@ impl VersionInfo {
     pub async fn fetch(&self) -> Result<CrateSource> {
         info!(
             "Fetching crate source for {} v{} from network",
-            self.krate, self.num
+            self.krate, self.version
         );
         let url = format!(
             "https://static.crates.io/crates/{}/{}-{}.crate",
-            self.krate, self.krate, self.num
+            self.krate, self.krate, self.version
         );
         let url: Url = url.parse()?;
         let response = Request::get(url.as_str()).send().await?;
@@ -225,7 +226,7 @@ impl CrateSource {
         let mut archive = Archive::new(data);
 
         // this is the path prefix we expect in the archive.
-        let prefix = format!("{}-{}/", self.version.krate, self.version.num);
+        let prefix = format!("{}-{}/", self.version.krate, self.version.version);
 
         for entry in archive.entries()? {
             let mut entry = entry?;
@@ -291,7 +292,7 @@ impl VersionDiff {
     pub fn new(left: Arc<CrateSource>, right: Arc<CrateSource>) -> Self {
         info!(
             "Computing diff for {} version {} and {} version {}",
-            left.version.krate, left.version.num, right.version.krate, right.version.num
+            left.version.krate, left.version.version, right.version.krate, right.version.version
         );
 
         let mut entry = Entry::default();

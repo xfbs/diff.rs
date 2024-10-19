@@ -10,7 +10,7 @@ fn parse_canned_response(name: &str) -> Result<CrateResponse> {
 }
 
 fn parse_canned_source(version: &VersionInfo) -> Result<CrateSource> {
-    let data = std::fs::read(format!("data/{}-{}.crate", version.krate, version.num))?;
+    let data = std::fs::read(format!("data/{}-{}.crate", version.krate, version.version))?;
     let source = CrateSource::new(version.clone(), &data[..])?;
     Ok(source)
 }

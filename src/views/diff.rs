@@ -153,8 +153,8 @@ fn SourceFetcher(props: &SourceFetcherProps) -> Html {
             <ComplexNavbar
                 src_name={props.src_info.krate.id.clone()}
                 dst_name={props.dst_info.krate.id.clone()}
-                old={props.old.num.clone()}
-                new={props.new.num.clone()}
+                old={props.old.version.clone()}
+                new={props.new.version.clone()}
                 src_info={props.src_info.clone()}
                 dst_info={props.dst_info.clone()}
             />
@@ -197,8 +197,8 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                 <ComplexNavbar
                     src_name={props.src_info.krate.id.clone()}
                     dst_name={props.dst_info.krate.id.clone()}
-                    old={props.old.num.clone()}
-                    new={props.new.num.clone()}
+                    old={props.old.version.clone()}
+                    new={props.new.version.clone()}
                     src_info={props.src_info.clone()}
                     dst_info={props.dst_info.clone()}
                     onchange={
@@ -231,8 +231,8 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                 <Redirect<Route> to={Route::File {
                     old_krate: props.src_info.krate.id.clone(),
                     new_krate: props.dst_info.krate.id.clone(),
-                    old_version: props.old.num.clone().into(),
-                    new_version: props.new.num.clone().into(),
+                    old_version: props.old.version.clone().into(),
+                    new_version: props.new.version.clone().into(),
                     path: "Cargo.toml".into(),
                 }} />
             })
@@ -273,8 +273,8 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
             <ComplexNavbar
                 src_name={props.src_info.krate.id.clone()}
                 dst_name={props.dst_info.krate.id.clone()}
-                old={props.old.version.num.clone()}
-                new={props.new.version.num.clone()}
+                old={props.old.version.version.clone()}
+                new={props.new.version.version.clone()}
                 src_info={props.src_info.clone()}
                 dst_info={props.dst_info.clone()}
                 onchange={

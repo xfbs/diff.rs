@@ -150,7 +150,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
         versions
             .iter()
             .map(|version| {
-                let num = IString::from(version.num.to_string());
+                let num = IString::from(version.version.to_string());
                 if version.yanked {
                     (num.clone(), format!("{num} (yanked)").into())
                 } else {
