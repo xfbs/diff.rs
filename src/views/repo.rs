@@ -5,7 +5,6 @@ use crate::{
     version::VersionId,
 };
 use camino::Utf8PathBuf;
-use log::*;
 use std::{rc::Rc, sync::Arc};
 use yew::{prelude::*, suspense::*};
 
@@ -118,7 +117,7 @@ fn CrateSourceFetcherInner(props: &CrateSourceFetcherProps) -> HtmlResult {
 
     let source = match &*source {
         Ok(source) => source.clone(),
-        Err(error) => {
+        Err(_error) => {
             return Ok(html! {
                 {"Error fetching source"}
             });
@@ -164,8 +163,6 @@ fn RepoSourceFetcher(props: &RepoSourceFetcherProps) -> Html {
         repository,
         vcs_info,
     };
-
-    let url = info.url();
 
     let fallback = html! {
         {"Loading repository archive"}

@@ -300,7 +300,7 @@ impl CrateSource {
         }
 
         let prefix = format!("{}-{}/", version.krate, version.version);
-        let mut source = CrateSource {
+        let source = CrateSource {
             version,
             files: Self::parse_archive(&prefix, data, true)?,
         };
@@ -330,7 +330,7 @@ impl CrateSource {
             // make path encoding error explicit
             let bytes = entry.path_bytes();
             let path = std::str::from_utf8(&bytes)?;
-            let path = match path.strip_prefix(&prefix) {
+            let path = match path.strip_prefix(prefix) {
                 Some(path) => path,
                 None if error_outside_prefix => {
                     return Err(CrateSourceError::InvalidPrefix {
@@ -349,15 +349,10 @@ impl CrateSource {
 
             debug!("Storing path {path} ({} bytes)", data.len());
             // store data
-            files.insert(path.into(), data.into());
+            files.insert(path, data.into());
         }
 
         Ok(files)
-    }
-
-    /// Add a single file to crate source.
-    fn add<T: Into<Bytes>>(&mut self, path: &Utf8Path, data: T) {
-        self.files.insert(path.into(), data.into());
     }
 
     /// Get [`CargoVcsInfo`] from the crate sources.
@@ -366,7 +361,7 @@ impl CrateSource {
             .files
             .get(Utf8Path::new(".cargo_vcs_info.json"))
             .ok_or(CargoVcsInfoError::Missing)?;
-        let decoded = serde_json::from_slice(&raw)?;
+        let decoded = serde_json::from_slice(raw)?;
         Ok(decoded)
     }
 }
