@@ -289,9 +289,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     html! {
         <div class="file-tree">
             <div class="header">
-                <span></span>
-                <span class="grow"></span>
-            {get_file_name_search_bar(&search_filter)}
+            <FileSearch filter={search_filter.clone()} />
             <div class="button-group" role="group">
                     <button
                         type="button"
@@ -329,26 +327,29 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
     }
 }
 
-fn get_file_name_search_bar(search_filter: &UseStateHandle<SearchFilter>) -> Html {
+#[derive(Properties, PartialEq)]
+pub struct FileSearchProps {
+    filter: UseStateHandle<SearchFilter>,
+}
+
+#[function_component]
+fn FileSearch(props: &FileSearchProps) -> Html {
     let oninput = {
-        let search_filter = search_filter.clone();
+        let search_filter = props.filter.clone();
         move |event: InputEvent| {
-            search_filter.set(SearchFilter::Filter(
-                event
-                    .target_unchecked_into::<HtmlInputElement>()
-                    .value()
-                    .into(),
-            ));
+            let value = event
+                .target_unchecked_into::<HtmlInputElement>()
+                .value()
+                .into();
+            search_filter.set(SearchFilter::Filter(value));
         }
     };
     html! {
-        <>
         <div class="relative w-full">
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <SearchGlass />
             </div>
-            <input type="search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Filter..." value={search_filter.to_string()} {oninput}  />
+            <input type="search" class="block w-full p-1 ps-10 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Filter..." value={props.filter.to_string()} {oninput}  />
         </div>
-        </>
     }
 }
