@@ -20,49 +20,22 @@ Currently, `diff.rs` is a single-page web application implemented in Rust using
 
 ## Fetching Crate Info
 
-
+To render a diff, it uses [gloo](https://docs.rs/gloo) to make a request to the
+[crates.io](https://crates.io) API in order to fetch crate metadata.  This is a
+JSON structure that is parsed into a `CrateResponse` using
+[serde](https://docs.rs/serde) and [serde_json](https://docs.rs/serde_json).
 
 ## Diffing Crates
 
+Using that response, the code will resolve the versions that are in the URL by
+looking them up in the `versions` field of that response. If they exist, the
+code then performs another request to fetch the crate sources.  These are
+gzip-compressed tar balls, which are decompressed using
+[flate2](https://docs.rs/flate2) and extracted in-memory using
+[tar](https://docs.rs/tar). 
 
+Finally, the code uses [similar](https://docs.rs/simiar) to generate a diff and
+render it in the browser. It uses the [syntect](https://docs.rs/syntect) for
+syntax highlighting.
 
-
-## Deployment
-
-The workflow for deployment work like this:
-
-- Building the frontend using `trunk build --release`
-- Compressing assets using `gzip` and `brotli`
-- Adding a `_redirects` file to configure it as a single-page application
-
-![Deployment diagram](deployment.svg)
-
-Building is done using [Trunk][trunk]. It uses Cargo under the hood to compile
-the code for `wasm32-unknown-unknown`, adds some glue code to launch it in the
-browser and links the assets. Running this includes:
-
-- Running `tailwindcss` to generate the Tailwind CSS styles.
-- Using [wasm-bindgen][] to generate bindings for the WebAssembly binary for the browser.
-- Using [wasm-opt][] to optimize the resulting WebAssembly binary.
-- Including the assets and hashing them for Sub-Resource Integrity and cache busting
-- Minifying the assets
-
-Deployment is done using [GitLab CI][gitlab-ci]. The
-[configuration](../.gitlab-ci.yml) runs Trunk, and uses `gzip` and `brotli` to
-pre-compress the files. Using compression makes the resulting WebAssembly blob
-and assets significantly smaller, at the time of writing, it makes it go from
-3MB to 1MB. This step consists of:
-
-Hosting of the project is provided by [GitLab Pages][gitlab-pages]. The
-resulting files of the building and compression are statically hosted by it.
-GitLab Pages will serve the precompressed files if the request indicates that
-the client supports it. A `_redirects` file is used to tell it to serve the
-`index.html` file for every route, to make it work as a single-page
-application.
-
-[trunk]: https://trunkrs.dev/
-[gitlab-pages]: https://docs.gitlab.com/ee/user/project/pages/
-[gitlab-ci]: https://docs.gitlab.com/ee/ci/
-[wasm-opt]: https://github.com/WebAssembly/binaryen
-[wasm-bindgen]: https://github.com/rustwasm/wasm-bindgen
 [yew]: https://yew.rs

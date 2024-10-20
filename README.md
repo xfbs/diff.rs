@@ -7,30 +7,15 @@ deployed at [diff.rs](https://diff.rs).
 
 ## How it works
 
-It uses [Yew](https://yew.rs) as the reactive frontend framework, and
-[blueprint.js](https://blueprintjs.com) with
-[yewprint](https://docs.rs/yewprint) for many of the components. Currently, a
-conversion to using [tailwind CSS](https://tailwindcss.com) is underway.
+It uses [Yew](https://yew.rs) as the reactive frontend framework, and [Tailwind
+CSS](https://tailwindcss.com) for the styling.
 
 The code in this repository compiles into a WebAssembly binary that runs in the
 browser. Since it only talks to the [crates.io](https://crates.io) API, it does
 not need any backend and can be hosted statically.
 
-To render a diff, it uses [gloo](https://docs.rs/gloo) to make a request to the
-[crates.io](https://crates.io) API in order to fetch crate metadata.  This is a
-JSON structure that is parsed into a `CrateResponse` using
-[serde](https://docs.rs/serde) and [serde_json](https://docs.rs/serde_json).
-
-Using that response, the code will resolve the versions that are in the URL by
-looking them up in the `versions` field of that response. If they exist, the
-code then performs another request to fetch the crate sources.  These are
-gzip-compressed tar balls, which are decompressed using
-[flate2](https://docs.rs/flate2) and extracted in-memory using
-[tar](https://docs.rs/tar). 
-
-Finally, the code uses [similar](https://docs.rs/simiar) to generate a diff and
-render it in the browser. It uses the [syntect](https://docs.rs/syntect) for
-syntax highlighting.
+The [Architecture](docs/architecture.md) document explains the details of how
+it works.
 
 ## How to launch it
 
@@ -74,8 +59,19 @@ enabled to help me measure how many people are actively using it. If you have
 an adblocker, this is likely blocked by it. You can see the data
 [here][analytics]
 
+See [Deployment](docs/deployment.md) for more information on how this works.
+
+## How to contribute
+
+Contributions to `diff.rs` are more than welcome. Feel free to check out the
+open [issues][] for inspiration.
+
+See [Contributing](docs/contributing.md) for more information on how to
+contribute.
+
 ## License
 
 MIT, see [LICENSE.md](LICENSE.md).
 
 [analytics]: https://counter.dev/dashboard.html?user=xfbs&token=4kPlix1Li7w%3D
+[issues]: https://github.com/xfbs/diff.rs/issues
