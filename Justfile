@@ -41,3 +41,10 @@ ci:
     cargo clippy -- -D warnings
     cargo test
     trunk build --release
+
+# generate a build, like we do in CI (including compression)
+build:
+    trunk clean
+    trunk build --release
+    find dist -not -name '*.gz' -not -name '*.br' -type f -exec gzip -vk {} \;
+    find dist -not -name '*.gz' -not -name '*.br' -type f -exec brotli -vk {} \;
