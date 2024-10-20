@@ -5,7 +5,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use log::*;
 use similar::ChangeTag;
-use std::rc::Rc;
+use std::{borrow::Cow, rc::Rc};
 use syntect::highlighting::Style;
 use yew::prelude::*;
 
@@ -209,6 +209,7 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
             </div>
         }
     } else {
+        let mut delete_queue = Vec::new();
         html! {
             <>
             if !props.in_context {
@@ -216,45 +217,61 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
             {
                 props.group.iter().enumerate().map(|(index, (tag, change))| {
                     let overall_index = group_start_index + index;
-                    let (sign, class) = match tag {
-                        ChangeTag::Delete => ("-", "deletion"),
-                        ChangeTag::Insert => ("+", "insertion"),
-                        ChangeTag::Equal => (" ", "unchanged"),
-                    };
-                    html! {
-                        <div class={classes!("line", class)}>
-                            <div class="line-number">
-                                {
-                                    format!("{overall_index}")
-                                }
-                            </div>
-                            <div class="line-number">
-                                {
-                                    format!("{overall_index}")
-                                }
-                            </div>
-                            <div class="change-icon">
-                                {
-                                    format!("{sign}")
-                                }
-                            </div>
-                            <div class="code-line">
-                                {
-                                    change.iter().map(|(style, text)| {
-                                        let style = syntect_style_to_css(style);
-                                        let contents = String::from_utf8_lossy(&text[..]);
-                                        html! {
-                                            <span style={style}>{contents}</span>
-                                        }
-                                    })
-                                    .collect::<Html>()
-                                }
-                            </div>
-                        </div>
+                    // delete tags get queued and rendered all at once
+                    if *tag == ChangeTag::Delete {
+                        delete_queue.push(change);
+                        html! {}
+                    } else {
+                        let (sign, class) = match tag {
+                            ChangeTag::Delete => ("-", "deletion"),
+                            ChangeTag::Insert => ("+", "insertion"),
+                            ChangeTag::Equal => (" ", "unchanged"),
+                        };
+                        // check delete queue and render in order w/ appropriate index
+                        let mut render_value = Vec::new();
+                        while delete_queue.len() > 0 {
+                            render_value.push(render("deletion", overall_index, "-", delete_queue.pop().expect("failed to remove from queue")));
+                        }
+                        render_value.push(render(class, overall_index, sign, change));
+                        render_value.into_iter().collect::<Html>()
                     }
                 }).collect::<Html>()
             }
             </>
         }
+    }
+}
+
+fn render(class: &str, overall_index: usize, sign: &str, change: &Vec<(Style, bytes::Bytes)>) -> Html {
+    html! {
+        <div class={classes!("line", class.to_string())}>
+            <div class="line-number">
+                {
+                    format!("{overall_index}")
+                }
+            </div>
+            <div class="line-number">
+                {
+                    format!("{overall_index}")
+                }
+            </div>
+            <div class="change-icon">
+                {
+                    format!("{sign}")
+                }
+            </div>
+            <div class="code-line">
+                {
+                    change.iter().map(|(style, text)| {
+                        let style = syntect_style_to_css(style);
+                        let contents = String::from_utf8_lossy(&text[..]);
+                        html! {
+                            <span style={style}>{contents}</span>
+                        }
+                    })
+                    .collect::<Html>()
+                }
+            </div>
+        </div>
     }
 }
