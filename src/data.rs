@@ -86,7 +86,7 @@ pub struct CrateDetail {
 pub struct CrateResponse {
     //pub categories: BTreeSet<String>,
     #[serde(rename = "crate")]
-    pub krate: CrateInfo,
+    pub krate: CrateDetail,
     pub versions: Vec<VersionInfo>,
 }
 
@@ -174,13 +174,84 @@ impl VersionInfo {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct RepositoryInfo {
+    pub repository: Url,
+    pub vcs_info: CargoVcsInfo,
+}
+
+impl RepositoryInfo {
+    pub fn url(&self) -> Option<Url> {
+        if self.repository.as_str().starts_with("https://github.com/") {
+            let mut url = Url::parse("https://codeload.github.com/").unwrap();
+            url.path_segments_mut()
+                .unwrap()
+                .extend(self.repository.path_segments().unwrap())
+                .extend(&["tar.gz", &self.vcs_info.git.sha1]);
+            let url = format!("https://corsproxy.io/?{url}").parse().unwrap();
+            return Some(url);
+        }
+
+        if self.repository.as_str().starts_with("https://gitlab.com/") {
+            let mut url = self.repository.clone();
+            url.path_segments_mut().unwrap().extend(&[
+                "-",
+                "archive",
+                &format!("{}.tar.gz", self.vcs_info.git.sha1),
+            ]);
+            let url = format!("https://corsproxy.io/?{url}").parse().unwrap();
+            return Some(url);
+        }
+
+        None
+    }
+
+    fn prefix(&self) -> String {
+        let repo = self.repository.path().split('/').last().unwrap_or("");
+        let mut prefix = format!("{repo}-{}/", self.vcs_info.git.sha1);
+
+        if !self.vcs_info.path_in_vcs.is_empty() {
+            prefix.push_str(&self.vcs_info.path_in_vcs);
+            prefix.push('/');
+        }
+
+        prefix
+    }
+
+    pub async fn fetch(&self) -> Result<CrateSource> {
+        let version = VersionInfo {
+            checksum: vec![],
+            dl_path: Default::default(),
+            krate: "".into(),
+            yanked: false,
+            version: "0.0.0".parse().unwrap(),
+        };
+        let url = self
+            .url()
+            .ok_or(anyhow::anyhow!("cannot get repository URL"))?;
+        let response = Request::get(url.as_str()).send().await?;
+        if !response.ok() {
+            return Err(anyhow!("Error response: {}", response.status()));
+        }
+
+        let bytes = response.binary().await?;
+        let prefix = self.prefix();
+        Ok(CrateSource {
+            version,
+            files: CrateSource::parse_archive(&prefix, &bytes[..], false)?,
+        })
+    }
+}
+
+type FileContents = BTreeMap<Utf8PathBuf, Bytes>;
+
 /// Crate source
 ///
 /// This is parsed from the gzipped tarball that crates.io serves for every crate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateSource {
     pub version: VersionInfo,
-    pub files: BTreeMap<Utf8PathBuf, Bytes>,
+    pub files: FileContents,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -215,73 +286,108 @@ pub enum CrateSourceError {
 impl CrateSource {
     /// Create empty crate source for the given version.
     pub fn new(version: VersionInfo, data: &[u8]) -> Result<Self, CrateSourceError> {
-        let mut source = CrateSource {
-            version,
-            files: Default::default(),
-        };
-
-        source.parse_compressed(data)?;
-        Ok(source)
-    }
-
-    /// Parse gzipped tarball returned by crates.io.
-    fn parse_compressed(&mut self, data: &[u8]) -> Result<(), CrateSourceError> {
         // compute hash
         let mut hasher = Sha256::new();
         hasher.update(data);
         let hash = hasher.finalize();
 
         // make sure hash matches
-        if hash[..] != self.version.checksum[..] {
+        if hash[..] != version.checksum[..] {
             return Err(CrateSourceError::HashsumMismatch {
-                expected: self.version.checksum.clone(),
+                expected: version.checksum.clone(),
                 got: hash[..].to_vec(),
             });
         }
 
-        let mut decoder = GzDecoder::new(data);
-        self.parse_archive(&mut decoder)?;
-        Ok(())
+        let prefix = format!("{}-{}/", version.krate, version.version);
+        let mut source = CrateSource {
+            version,
+            files: Self::parse_archive(&prefix, data, true)?,
+        };
+
+        Ok(source)
     }
 
-    /// Parse archive.
-    fn parse_archive(&mut self, data: &mut dyn Read) -> Result<(), CrateSourceError> {
-        let mut archive = Archive::new(data);
+    /// Parse gzipped archive.
+    fn parse_archive(
+        prefix: &str,
+        data: &[u8],
+        error_outside_prefix: bool,
+    ) -> Result<FileContents, CrateSourceError> {
+        let mut data = GzDecoder::new(data);
+        let mut archive = Archive::new(&mut data);
+        let mut files = FileContents::default();
 
         // this is the path prefix we expect in the archive.
-        let prefix = format!("{}-{}/", self.version.krate, self.version.version);
-
         for entry in archive.entries()? {
             let mut entry = entry?;
+
+            //debug!("{} {:?}", entry.path().unwrap().display(), entry.header().entry_type());
+            if !entry.header().entry_type().is_file() {
+                continue;
+            }
 
             // make path encoding error explicit
             let bytes = entry.path_bytes();
             let path = std::str::from_utf8(&bytes)?;
             let path = match path.strip_prefix(&prefix) {
                 Some(path) => path,
-                None => {
+                None if error_outside_prefix => {
                     return Err(CrateSourceError::InvalidPrefix {
                         path: path.to_string(),
-                        prefix,
+                        prefix: prefix.into(),
                     })
                 }
+                None => continue,
             };
+
             let path: Utf8PathBuf = path.into();
 
             // read data
             let mut data = vec![];
             entry.read_to_end(&mut data)?;
 
+            debug!("Storing path {path} ({} bytes)", data.len());
             // store data
-            self.add(&path, data);
+            files.insert(path.into(), data.into());
         }
-        Ok(())
+
+        Ok(files)
     }
 
     /// Add a single file to crate source.
     fn add<T: Into<Bytes>>(&mut self, path: &Utf8Path, data: T) {
         self.files.insert(path.into(), data.into());
     }
+
+    /// Get [`CargoVcsInfo`] from the crate sources.
+    pub fn cargo_vcs_info(&self) -> Result<CargoVcsInfo, CargoVcsInfoError> {
+        let raw = self
+            .files
+            .get(Utf8Path::new(".cargo_vcs_info.json"))
+            .ok_or(CargoVcsInfoError::Missing)?;
+        let decoded = serde_json::from_slice(&raw)?;
+        Ok(decoded)
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CargoVcsInfoError {
+    #[error("Cargo VCS info missing")]
+    Missing,
+    #[error("cannot decode .cargo_vcs_info.json")]
+    Decode(#[from] serde_json::Error),
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq)]
+pub struct CargoVcsInfo {
+    git: CargoGitInfo,
+    path_in_vcs: String,
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq)]
+pub struct CargoGitInfo {
+    sha1: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -503,6 +609,7 @@ impl Entry {
     }
 
     pub fn insert(&mut self, path: &Utf8Path, changes: Changes) {
+        debug!("Inserting {path} with changes {changes:?}");
         let mut entry = self;
 
         for component in path.components() {

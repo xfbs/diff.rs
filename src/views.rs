@@ -9,6 +9,7 @@ mod about;
 mod diff;
 mod home;
 mod not_found;
+mod repo;
 mod search;
 
-pub use self::{about::*, diff::*, home::Home, not_found::NotFound, search::Search};
+pub use self::{about::*, diff::*, home::Home, not_found::NotFound, repo::*, search::Search};

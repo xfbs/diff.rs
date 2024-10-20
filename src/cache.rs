@@ -63,10 +63,18 @@ fn test_crate_response_cache_store() {
     let cache = CrateResponseCache::new();
     assert!(cache.cached("serde").is_none());
     let crate_response = Arc::new(CrateResponse {
-        krate: CrateInfo {
+        krate: CrateDetail {
             id: "serde".into(),
-            max_version: "0.1.0".into(),
-            max_stable_version: Some("0.1.0".into()),
+            max_version: "0.1.0".parse().unwrap(),
+            max_stable_version: Some("0.1.0".parse().unwrap()),
+            description: "".into(),
+            documentation: None,
+            downloads: 0,
+            exact_match: true,
+            homepage: None,
+            newest_version: "0.1.0".parse().unwrap(),
+            recent_downloads: None,
+            repository: None,
         },
         versions: Default::default(),
     });

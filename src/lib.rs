@@ -97,6 +97,13 @@ pub enum Route {
         path: Utf8PathBuf,
     },
 
+    #[at("/repo/:krate/:version/files/*path")]
+    RepoFile {
+        krate: String,
+        version: VersionId,
+        path: Utf8PathBuf,
+    },
+
     /// Route that is matched if no other route matches, shows error message.
     #[not_found]
     #[at("/404")]
@@ -175,6 +182,13 @@ impl Route {
             },
             Route::NotFound => html! { <NotFound /> },
             Route::Search { query } => html! { <Search search={query} /> },
+            Route::RepoFile {
+                krate,
+                version,
+                path,
+            } => html! {
+                <RepoFileView {krate} {version} {path} />
+            },
         }
     }
 
