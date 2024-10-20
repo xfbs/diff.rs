@@ -1,5 +1,23 @@
 # Architecture
 
+This document explains the high-level architecture of `diff.rs`. It is intended
+as an explainer that is useful for people to quickly get up to speed on how it
+works.
+
+## Code Structure
+
+Currently, `diff.rs` is a single-page web application implemented in Rust using
+[Yew][yew]. It is structured like this:
+
+- `src/main.rs` is the binary entrypoint. It sets up logging and the Yew rendering.
+- `src/lib.rs` is the library entrypoint. It defines the routing and re-exports definitions.
+  The router will map every route to a view.
+- `src/views/` contains views, these are the root components for entire pages. There is one
+  module per view. Every module exports a single view, but can also contain private
+  components which are only used in that particular view.
+- `src/components/` contains components which are re-used across views.
+- `src/tailwind.css` contains styles for the components and views.
+
 ## Fetching Crate Info
 
 
@@ -47,3 +65,4 @@ application.
 [gitlab-ci]: https://docs.gitlab.com/ee/ci/
 [wasm-opt]: https://github.com/WebAssembly/binaryen
 [wasm-bindgen]: https://github.com/rustwasm/wasm-bindgen
+[yew]: https://yew.rs
