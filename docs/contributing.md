@@ -105,6 +105,30 @@ Then, the utility classes are applied to the style of the custom elements:
 }
 ```
 
+In general, every component should have a class which is applied to the root
+HTML element that it consists of, which should be unique. It can also have
+helper classes which are applied to child components, which don't need to be
+unique. Doing this is not a requirement but seems like a good way to structure
+it.
+
+## Requests
+
+The tool uses the [crates.io][] API to fetch data. These data requests include:
+
+- Search requests for crates
+- Summary of recently published crates
+- Crate metadata
+- Crate contents
+
+Using the API for this seems to be okay, however it is important to be mindful
+of the number of requests made. When possible, requests should be cached, either
+in-memory or in LocalStorage, to avoid performing more requests than the API is
+happy to deal with.
+
+Downloads of crate contents should be made through an API which does not count
+them as downloads, see [this
+comment](https://github.com/rust-lang/crates.io/issues/6164#issuecomment-1502698588)
+and [this article](https://www.pietroalbini.org/blog/downloading-crates-io/)
 
 ## Documentation
 
@@ -140,11 +164,13 @@ Browsers that should work are:
 - Chromium
 - Safari
 
-If possible, use the *Response Design Mode* of each browser to verify that the
-side looks good on both small, medium and large screens.
+If possible, use the *Responsive Design Mode* of each browser to verify that
+the side looks good on both small, medium and large screens.
 
-It is not required to support all browsers, for example old versions of IE.  It
-is more important that the implementation is simple and works well.
+It is not required to support all browsers. For example, some of the components
+will not work for IE. At this point, it is more important that the
+implementation is simple and works well for common browsers. In the future,
+backwards compatibility may be more of a priority.
 
 ## Commits
 

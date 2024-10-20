@@ -9,14 +9,19 @@ works.
 Currently, `diff.rs` is a single-page web application implemented in Rust using
 [Yew][yew]. It is structured like this:
 
-- `src/main.rs` is the binary entrypoint. It sets up logging and the Yew rendering.
-- `src/lib.rs` is the library entrypoint. It defines the routing and re-exports definitions.
-  The router will map every route to a view.
-- `src/views/` contains views, these are the root components for entire pages. There is one
-  module per view. Every module exports a single view, but can also contain private
-  components which are only used in that particular view.
+- `src/main.rs` is the binary entrypoint. It sets up logging and the Yew
+  rendering.
+- `src/lib.rs` is the library entrypoint. It defines the routing and re-exports
+  definitions.  The router will map every route to a view.
+- `src/views/` contains views, these are the root components for entire pages.
+  There is one module per view. Every module exports a single view, but can
+  also contain private components which are only used in that particular view.
 - `src/components/` contains components which are re-used across views.
 - `src/tailwind.css` contains styles for the components and views.
+- `index.html` contains the skeleton and metadata for Trunk for which assets to
+  build and bundle.
+
+See also [Contributing](contributing.md) for more information of the structure.
 
 ## Fetching Crate Info
 

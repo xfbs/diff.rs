@@ -6,7 +6,7 @@ The workflow for deployment work like this:
 - Compressing assets using `gzip` and `brotli`
 - Adding a `_redirects` file to configure it as a single-page application
 
-![Deployment diagram](deployment.svg)
+![Deployment diagram](diagrams/deployment.svg)
 
 Building is done using [Trunk][trunk]. It uses Cargo under the hood to compile
 the code for `wasm32-unknown-unknown`, adds some glue code to launch it in the
