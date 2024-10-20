@@ -5,7 +5,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use log::*;
 use similar::ChangeTag;
-use std::{borrow::Cow, rc::Rc};
+use std::rc::Rc;
 use syntect::highlighting::Style;
 use yew::prelude::*;
 
