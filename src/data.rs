@@ -490,7 +490,7 @@ impl VersionDiff {
             for offset in offsets.iter() {
                 let hunk = offset.saturating_sub(CONTEXT_LINES)..*offset + CONTEXT_LINES + 1;
                 let overlaps_with_last_hunk =
-                    hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end);
+                    hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end) + CONTEXT_LINES;
                 if overlaps_with_last_hunk {
                     last_hunk = last_hunk.start..hunk.end;
                 } else {
