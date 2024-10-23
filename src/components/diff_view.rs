@@ -2,6 +2,7 @@ use crate::{
     data::{FileDiff, VersionDiff},
     syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
 };
+use bytes::Bytes;
 use camino::Utf8PathBuf;
 use log::*;
 use similar::ChangeTag;
@@ -47,6 +48,7 @@ fn FileIcon() -> Html {
 pub fn DiffView(props: &DiffViewProps) -> Html {
     let empty = FileDiff::default();
     let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
+    let summary = props.diff.summary.get(&props.path).unwrap_or(&(0, 0));
     let is_identical_version = props.diff.left.version == props.diff.right.version;
 
     // Determine which syntax should be used for this file. It will be based
@@ -106,7 +108,13 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
                 <span class="filename">{props.path.file_name().unwrap_or("")}</span>
             </div>
             <div class="content">
-                <UnifiedDiffView {stack} />
+                {
+                    if summary == &(0,0) {
+                        html! {<FileDisplayView {stack} />}
+                    } else {
+                        html! {<UnifiedDiffView {stack} />}
+                    }
+                }
             </div>
         </div>
     }
@@ -131,6 +139,32 @@ pub fn UnifiedDiffView(props: &AnyDiffViewProps) -> Html {
                                 key={format!("{:?}", range)}
                                 group={group.clone()}
                                 {in_context}
+                                group_start_index={overall_index}
+                            />
+                        };
+                        overall_index += group.len();
+                        res
+                    })
+                    .collect::<Html>()
+            }
+            </div>
+        </div>
+    }
+}
+
+#[function_component]
+pub fn FileDisplayView(props: &AnyDiffViewProps) -> Html {
+    let mut overall_index = 0;
+    html! {
+        <div class="overflow-x-scroll bg-white">
+            <div class="unified">
+            {
+                props.stack.iter()
+                    .map(|DiffGroupInfo {group, range, in_context: _}| {
+                        let res = html!{
+                            <FileView
+                                key={format!("{:?}", range)}
+                                group={group.iter().map(|(_, line)| line.clone()).collect::<Vec<_>>()}
                                 group_start_index={overall_index}
                             />
                         };
@@ -187,6 +221,12 @@ pub struct DiffLineGroupProps {
     group_start_index: usize,
 }
 
+#[derive(Properties, PartialEq)]
+pub struct DisplayGroupProps {
+    group: Vec<Vec<(Style, bytes::Bytes)>>,
+    group_start_index: usize,
+}
+
 #[function_component]
 pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
     let folded = use_state(|| !props.in_context);
@@ -223,7 +263,7 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
                     };
                     html! {
                         <div class={classes!("line", class)}>
-                            <div class="line-number">
+                        <div class="line-number">
                                 {
                                     format!("{overall_index}")
                                 }
@@ -239,16 +279,7 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
                                 }
                             </div>
                             <div class="code-line">
-                                {
-                                    change.iter().map(|(style, text)| {
-                                        let style = syntect_style_to_css(style);
-                                        let contents = String::from_utf8_lossy(&text[..]);
-                                        html! {
-                                            <span style={style}>{contents}</span>
-                                        }
-                                    })
-                                    .collect::<Html>()
-                                }
+                                <CodeLine stack={change.clone()} />
                             </div>
                         </div>
                     }
@@ -257,4 +288,47 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
             </>
         }
     }
+}
+
+#[function_component]
+pub fn FileView(props: &DisplayGroupProps) -> Html {
+    props
+        .group
+        .iter()
+        .enumerate()
+        .map(|(index, change)| {
+            html! {
+                <div class={classes!("line", "unchanged")}>
+                    <div class={classes!("line-number", "file-view")}>
+                        {
+                            format!("{}", index+1+ props.group_start_index)
+                        }
+                    </div>
+                    <div class="code-line">
+                        <CodeLine stack={change.clone()} />
+                    </div>
+                </div>
+            }
+        })
+        .collect::<Html>()
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CodeLineProps {
+    stack: Vec<(Style, Bytes)>,
+}
+
+#[function_component]
+pub fn CodeLine(props: &CodeLineProps) -> Html {
+    props
+        .stack
+        .iter()
+        .map(|(style, text)| {
+            let style = syntect_style_to_css(style);
+            let contents = String::from_utf8_lossy(&text[..]);
+            html! {
+                <span style={style}>{contents}</span>
+            }
+        })
+        .collect::<Html>()
 }
