@@ -500,8 +500,8 @@ impl VersionDiff {
                     left_start,
                     right_start,
                 );
-                let overlaps_with_last_hunk =
-                    hunk.0.start.max(last_hunk.0.start) <= hunk.0.end.min(last_hunk.0.end);
+                let overlaps_with_last_hunk = hunk.0.start.max(last_hunk.0.start)
+                    <= hunk.0.end.min(last_hunk.0.end) + CONTEXT_LINES;
                 if overlaps_with_last_hunk {
                     last_hunk = (last_hunk.0.start..hunk.0.end, last_hunk.1, last_hunk.2);
                 } else {
