@@ -1,5 +1,5 @@
 use crate::{
-    data::{FileDiff, VersionDiff},
+    data::{ChunkInfo, FileDiff, VersionDiff},
     syntax::{highlight_changes, infer_syntax_for_file, syntect_style_to_css},
 };
 use camino::Utf8PathBuf;
@@ -15,7 +15,7 @@ struct DiffGroupInfo {
     /// The actual changes
     group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     /// What range of lines the group covers (used as a Yew list key)
-    range: std::ops::Range<usize>,
+    range: ChunkInfo,
     /// Whether the group contains an actual diff (and therefore shows some context)
     in_context: bool,
 }
@@ -68,12 +68,18 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
     // Group contiguous lines by whether they contain an actual diff +/- some context buffer.
     let mut cursor = 0;
     let mut stack: Vec<DiffGroupInfo> = vec![];
+
     for next_range in ranges {
         // out of context lines
-        if next_range.start != 0 {
+        if next_range.start() != 0 {
             stack.push(DiffGroupInfo {
-                group: changes.by_ref().take(next_range.start - cursor).collect(),
-                range: cursor..next_range.start,
+                group: changes.by_ref().take(next_range.start() - cursor).collect(),
+                range: ChunkInfo {
+                    range: cursor..next_range.start(),
+                    left_start: (next_range.left_start + cursor).saturating_sub(next_range.start()),
+                    right_start: (next_range.right_start + cursor)
+                        .saturating_sub(next_range.start()),
+                },
                 in_context: false,
             });
         }
@@ -81,18 +87,23 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
         stack.push(DiffGroupInfo {
             group: changes
                 .by_ref()
-                .take(next_range.end - next_range.start)
+                .take(next_range.end() - next_range.start())
                 .collect(),
             range: next_range.clone(),
             in_context: true,
         });
-        cursor = next_range.end;
+        cursor = next_range.end();
     }
     if changes.len() > 0 {
         // Trailing unchanged lines at the end of a file
         stack.push(DiffGroupInfo {
             group: changes.by_ref().collect(),
-            range: cursor..file_diff.changes.len(),
+            range: ChunkInfo {
+                range: cursor..file_diff.changes.len(),
+                left_start: (cursor).saturating_sub(file_diff.summary.added as usize),
+                right_start: (cursor).saturating_sub(file_diff.summary.removed as usize),
+            },
+
             // When comparing a version of the crate to itself, this group will
             // always contain the full text of the file. Don't collapse it.
             in_context: is_identical_version,
@@ -128,10 +139,10 @@ pub fn UnifiedDiffView(props: &AnyDiffViewProps) -> Html {
                     .map(|DiffGroupInfo {group, range, in_context}| {
                         let res = html!{
                             <DiffLineGroup
-                                key={format!("{:?}", range)}
+                                key={format!("{:?}", range.range)}
                                 group={group.clone()}
                                 {in_context}
-                                group_start_index={overall_index}
+                                group_start_index={(overall_index, range.left_start, range.right_start)}
                             />
                         };
                         overall_index += group.len();
@@ -158,7 +169,7 @@ pub fn SplitDiffView(props: &AnyDiffViewProps) -> Html {
                                 key={format!("{:?}", range)}
                                 group={group.clone()}
                                 {in_context}
-                                group_start_index={overall_index}
+                                group_start_index={(overall_index, range.left_start, range.right_start)}
                             />
                         };
                         overall_index += group.len();
@@ -184,7 +195,7 @@ fn ExpandIcon() -> Html {
 pub struct DiffLineGroupProps {
     group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     in_context: bool,
-    group_start_index: usize,
+    group_start_index: (usize, usize, usize),
 }
 
 #[function_component]
@@ -194,8 +205,20 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
         let folded = folded.clone();
         Callback::from(move |_| folded.set(!*folded))
     };
-    let group_start_index = props.group_start_index + 1;
-    let end_index = group_start_index + props.group.len() - 1;
+
+    // go from 0-indexed to 1-indexed
+    let start_index = (
+        props.group_start_index.0 + 1,
+        props.group_start_index.1 + 1,
+        props.group_start_index.2 + 1,
+    );
+
+    // use the fact that folded sections never contain changes
+    let end_index = (
+        start_index.0 + props.group.len() - 1,
+        start_index.1 + props.group.len() - 1,
+        start_index.2 + props.group.len() - 1,
+    );
 
     if *folded {
         html! {
@@ -204,33 +227,46 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
                     <ExpandIcon />
                 </button>
                 <button class={classes!("info")} {onclick}>
-                    {format!("Show lines {group_start_index} to {end_index}")}
+                    {
+                    if start_index.1 == start_index.2 {
+                        format!("Show lines {:?} to {:?}", start_index.1, end_index.1)
+                    } else {
+                        format!("Show lines {:?} to {:?}", (start_index.1,start_index.2), (end_index.1,end_index.2))
+                    }
+                }
                 </button>
             </div>
         }
     } else {
+        let (mut left_idx, mut right_idx) = (start_index.1, start_index.2);
         html! {
             <>
             if !props.in_context {
             }
             {
-                props.group.iter().enumerate().map(|(index, (tag, change))| {
-                    let overall_index = group_start_index + index;
-                    let (sign, class) = match tag {
-                        ChangeTag::Delete => ("-", "deletion"),
-                        ChangeTag::Insert => ("+", "insertion"),
-                        ChangeTag::Equal => (" ", "unchanged"),
+                props.group.iter().map(|(tag, change)| {
+                    let (sign, class, left, right) = match tag {
+                        ChangeTag::Delete => ("-", "deletion", left_idx.to_string(), String::new()),
+                        ChangeTag::Insert => ("+", "insertion", String::new(), right_idx.to_string()),
+                        ChangeTag::Equal => (" ", "unchanged", left_idx.to_string(), right_idx.to_string()),
                     };
+                    (left_idx, right_idx) = match tag {
+                        ChangeTag::Delete => (left_idx + 1, right_idx),
+                        ChangeTag::Insert => (left_idx, right_idx + 1),
+                        ChangeTag::Equal => (left_idx + 1, right_idx + 1),
+                    };
+
                     html! {
                         <div class={classes!("line", class)}>
+
                             <div class="line-number">
                                 {
-                                    format!("{overall_index}")
+                                    format!("{left}")
                                 }
                             </div>
                             <div class="line-number">
                                 {
-                                    format!("{overall_index}")
+                                    format!("{right}")
                                 }
                             </div>
                             <div class="change-icon">
