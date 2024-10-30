@@ -390,7 +390,9 @@ pub struct FileDiff {
     /// Diff in this file
     pub changes: Vec<(ChangeTag, Bytes)>,
     /// Ranges of lines to show for each file
-    pub context_ranges: Vec<Range<usize>>,
+    pub context_ranges: Vec<ChunkInfo>,
+    // Redundant - alternativly take from files
+    pub summary: Changes,
 }
 
 /// Precomputed diff data
@@ -473,37 +475,46 @@ impl VersionDiff {
                 match tag {
                     ChangeTag::Equal => {}
                     ChangeTag::Delete => {
+                        // cnt for determining start idx of hunk, wanna start before this line, so do not count current line
+                        offsets.push((index, insertions, deletions));
                         deletions += 1;
-                        offsets.push(index);
                     }
                     ChangeTag::Insert => {
+                        offsets.push((index, insertions, deletions));
                         insertions += 1;
-                        offsets.push(index);
                     }
                 }
             }
 
             // compute ranges to show
             let mut ranges = vec![];
-            let mut last_hunk = 0..0;
+            let mut last_hunk = (0..0, 0, 0);
 
-            for offset in offsets.iter() {
-                let hunk = offset.saturating_sub(CONTEXT_LINES)..*offset + CONTEXT_LINES + 1;
-                let overlaps_with_last_hunk =
-                    hunk.start.max(last_hunk.start) <= hunk.end.min(last_hunk.end);
+            for (offset, ins, del) in offsets.iter() {
+                let hunk_start = offset.saturating_sub(CONTEXT_LINES);
+                let left_start = hunk_start.saturating_sub(*ins);
+                let right_start = hunk_start.saturating_sub(*del);
+
+                let hunk = (
+                    hunk_start..*offset + CONTEXT_LINES + 1,
+                    left_start,
+                    right_start,
+                );
+                let overlaps_with_last_hunk = hunk.0.start.max(last_hunk.0.start)
+                    <= hunk.0.end.min(last_hunk.0.end) + CONTEXT_LINES;
                 if overlaps_with_last_hunk {
-                    last_hunk = last_hunk.start..hunk.end;
+                    last_hunk = (last_hunk.0.start..hunk.0.end, last_hunk.1, last_hunk.2);
                 } else {
-                    if last_hunk.end != 0 {
-                        ranges.push(last_hunk.clone());
+                    if last_hunk.0.end != 0 {
+                        ranges.push(last_hunk.clone().into());
                     }
                     last_hunk = hunk;
                 }
             }
 
             // Push the last hunk we've computed if any
-            if last_hunk.end != 0 {
-                ranges.push(last_hunk)
+            if last_hunk.0.end != 0 {
+                ranges.push(last_hunk.into())
             }
 
             // compute additions
@@ -526,6 +537,10 @@ impl VersionDiff {
                 FileDiff {
                     changes,
                     context_ranges: ranges,
+                    summary: Changes {
+                        added: insertions as u64,
+                        removed: deletions as u64,
+                    },
                 },
             );
         }
@@ -537,6 +552,32 @@ impl VersionDiff {
             summary,
             tree: entry,
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct ChunkInfo {
+    pub range: Range<usize>,
+    pub left_start: usize,
+    pub right_start: usize,
+}
+
+impl From<(Range<usize>, usize, usize)> for ChunkInfo {
+    fn from((range, left_start, right_start): (Range<usize>, usize, usize)) -> Self {
+        ChunkInfo {
+            range,
+            left_start,
+            right_start,
+        }
+    }
+}
+
+impl ChunkInfo {
+    pub fn start(&self) -> usize {
+        self.range.start
+    }
+    pub fn end(&self) -> usize {
+        self.range.end
     }
 }
 
