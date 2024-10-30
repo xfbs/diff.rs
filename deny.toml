@@ -1,0 +1,62 @@
+[graph]
+targets = ["wasm32-unknown-unknown"]
+
+[output]
+feature-depth = 1
+
+[advisories]
+ignore = [
+    { id = "RUSTSEC-2024-0370", reason = "implicit dependency of yew" },
+]
+
+[licenses]
+# generally, we want to stick to these licenses.
+allow = [
+    "MIT",
+    "Apache-2.0",
+]
+confidence-threshold = 0.8
+# exceptions are okay, as long as they are open-source compatible
+exceptions = [
+    { allow = ["Unicode-DFS-2016"], crate = "unicode-ident" },
+    { allow = ["WTFPL"], crate = "subslice-offset" },
+]
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+highlight = "simplest-path"
+# skip multiple version checks for these crates. feel free to add more here,
+# the point of this list is so that we are aware of which dependency
+# duplications we have. since yew depends on some outdated versions, we can't
+# avoid some of them.
+skip = [
+    { crate = "syn", reason = "transitive dependency" },
+    { crate = "serde-wasm-bindgen", reason = "transitive dependency" },
+    { crate = "http", reason = "transitive dependency" },
+    { crate = "gloo-worker", reason = "transitive dependency" },
+    { crate = "gloo-utils", reason = "transitive dependency" },
+    { crate = "gloo-timers", reason = "transitive dependency" },
+    { crate = "gloo-storage", reason = "transitive dependency" },
+    { crate = "gloo-render", reason = "transitive dependency" },
+    { crate = "gloo-net", reason = "transitive dependency" },
+    { crate = "gloo-history", reason = "transitive dependency" },
+    { crate = "gloo-file", reason = "transitive dependency" },
+    { crate = "gloo-events", reason = "transitive dependency" },
+    { crate = "gloo-dialogs", reason = "transitive dependency" },
+    { crate = "gloo-console", reason = "transitive dependency" },
+    { crate = "gloo", reason = "transitive dependency" },
+]
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+
+[sources.allow-org]
+github = []
+gitlab = []
+bitbucket = []
