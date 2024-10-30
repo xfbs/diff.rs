@@ -44,9 +44,9 @@ Trunk.
     trunk serve
 
 You can test if the changes work by running the same checks that the CI runs by
-using the `ci` task in the Justfile:
+using the `check` task in the Justfile:
 
-    just ci
+    just check
 
 You can see the impact on the resulting file sizes by doing a build in the way
 the CI does it using the `build` target of the Justfile:

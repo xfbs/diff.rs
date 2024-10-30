@@ -150,10 +150,10 @@ as user-interfaces, especially across browsers. For this reason, some amount of
 manual testing is performed.
 
 Before you submit a patch, you should run the tests. A useful amount of tests
-are captured in the `ci` job of the Justfile. This will test formatting, code
-style, run the existing unit tests and perform a build.
+are captured in the `check` job of the Justfile. This will test formatting,
+code style, run the existing unit tests and perform a build.
 
-    just ci
+    just check
 
 For the actual application, there are currently no automated tests in place.
 The current testing procedure is to open up a local build of `diff.rs` in

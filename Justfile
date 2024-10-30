@@ -25,7 +25,8 @@ test-data-crates:
 # Install dependencies needed to run
 setup:
     rustup target add wasm32-unknown-unknown
-    cargo install trunk
+    rustup toolchain add nightly
+    cargo install trunk cargo-deny
 
 # Format code
 format:
@@ -36,11 +37,12 @@ serve:
     trunk serve
 
 # Run checks (same as in CI)
-ci:
+check:
     cargo +nightly fmt --check
     cargo clippy -- -D warnings
+    cargo deny check
     cargo test
-    trunk build --release
+    trunk build
 
 # generate a build, like we do in CI (including compression)
 build:
