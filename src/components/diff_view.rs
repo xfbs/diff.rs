@@ -281,14 +281,12 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
         let (mut left_idx, mut right_idx) = (start_index.1, start_index.2);
         html! {
             <>
-            if !props.in_context {
-            }
             {
                 props.group.iter().map(|(tag, change)| {
                     let (sign, class, left, right) = match tag {
-                        ChangeTag::Delete => ("-", "deletion", left_idx.to_string(), String::new()),
-                        ChangeTag::Insert => ("+", "insertion", String::new(), right_idx.to_string()),
-                        ChangeTag::Equal => (" ", "unchanged", left_idx.to_string(), right_idx.to_string()),
+                        ChangeTag::Delete => ("-", "deletion", Some(left_idx), None),
+                        ChangeTag::Insert => ("+", "insertion", None, Some(right_idx)),
+                        ChangeTag::Equal => (" ", "unchanged", Some(left_idx), Some(right_idx)),
                     };
                     (left_idx, right_idx) = match tag {
                         ChangeTag::Delete => (left_idx + 1, right_idx),
@@ -298,16 +296,16 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
 
                     html! {
                         <div class={classes!("line", class)}>
-                            <div class="line-number">
-                                {
-                                    format!("{left}")
+                            <a id={left.map(|i| format!("L{i}"))} class="line-number">
+                                if let Some(index) = left {
+                                    {index}
                                 }
-                            </div>
-                            <div class="line-number">
-                                {
-                                    format!("{right}")
+                            </a>
+                            <a id={right.map(|i| format!("R{i}"))} class="line-number">
+                                if let Some(index) = right {
+                                    {index}
                                 }
-                            </div>
+                            </a>
                             <div class="change-icon">
                                 {
                                     format!("{sign}")
