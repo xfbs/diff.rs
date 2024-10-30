@@ -67,8 +67,7 @@
         @apply w-4 shrink-0;
     }
 
-    .file-entry .toggle.active {
-    }
+    .file-entry .toggle.active {}
 
     .file-entry .icon {
         @apply w-4 shrink-0;
@@ -128,8 +127,7 @@
         @apply font-mono;
     }
 
-    .diff-view .content {
-    }
+    .diff-view .content {}
 
     .diff-view .content .unified {
         @apply grid grid-cols-[auto_auto_auto_1fr] font-mono;
@@ -158,6 +156,10 @@
         @apply contents;
     }
 
+    .diff-view .content .unified .line .file-view {
+        @apply col-span-3;
+    }
+
     .diff-view .content .unified .line .line-number {
         @apply text-right px-2;
         @apply text-gray-500 dark:text-gray-500;
@@ -175,7 +177,7 @@
         @apply px-2;
     }
 
-    .diff-view .content .unified .line.deletion > * {
+    .diff-view .content .unified .line.deletion>* {
         @apply bg-red-100;
     }
 
@@ -183,7 +185,7 @@
         @apply bg-red-200 dark:bg-red-900;
     }
 
-    .diff-view .content .unified .line.insertion > * {
+    .diff-view .content .unified .line.insertion>* {
         @apply bg-green-100;
     }
 
@@ -192,8 +194,7 @@
     }
 
 
-    .diff-view .content .split {
-    }
+    .diff-view .content .split {}
 
     .summary {
         @apply grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4;
