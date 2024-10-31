@@ -1,7 +1,7 @@
 use crate::{cache::*, components::*, data::*, version::VersionId, Route};
 use camino::Utf8PathBuf;
 use semver::Version;
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 use yew::{prelude::*, suspense::*};
 use yew_router::prelude::*;
 
@@ -268,6 +268,12 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
         VersionDiff::new(old.clone(), new.clone())
     });
     let navigator = use_navigator().unwrap();
+
+    let files = determine_display_files(&FileTreeProps {
+        diff: diff.clone(),
+        path: props.path.clone(),
+    });
+
     html! {
         <>
             <ComplexNavbar
@@ -300,10 +306,83 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                         />
                     </nav>
                     <div id="diff-view" class="flex-1">
-                        <DiffView {diff} path={props.path.clone()} />
+                    { for (*files).iter().map(|path| html!{<DiffView diff={diff.clone()} path={path.clone()} /> }) }
                     </div>
                 </main>
             </Content>
         </>
     }
+}
+
+fn determine_display_files(props: &FileTreeProps) -> Vec<Utf8PathBuf> {
+    if props.diff.files.contains_key(&props.path) {
+        // found a file e \o/
+        return vec![props.path.clone()];
+    }
+
+    let path = props.path.clone();
+    let mut navigator = &props.diff.tree.item;
+
+    for path_components in path.components() {
+        if let Item::Dir(dir) = navigator {
+            if let Some(deeper) = dir.get(&path_components.to_string()) {
+                if deeper.changes != Changes::default() {
+                    navigator = &deeper.item;
+                    continue;
+                }
+            }
+        }
+
+        return vec![path.clone()];
+    }
+
+    let files_in_path: Vec<Utf8PathBuf> = if let Item::Dir(dir) = navigator {
+        rel_filepaths_in_tree(dir, true)
+            .into_iter()
+            .map(|p| {
+                let mut dirn_name = props.path.clone();
+                dirn_name.push(&p);
+                dirn_name
+            })
+            .collect()
+    } else {
+        unreachable!()
+    };
+
+    if files_in_path.is_empty() {
+        vec![props.path.clone()]
+    } else {
+        files_in_path
+    }
+}
+
+fn rel_filepaths_in_tree(
+    dir: &BTreeMap<String, std::rc::Rc<Entry>>,
+    no_unchanged: bool,
+) -> Vec<Utf8PathBuf> {
+    let mut paths: Vec<Utf8PathBuf> = Vec::new();
+    for (name, entry) in dir {
+        if entry.changes == Changes::default() && no_unchanged {
+            continue;
+        }
+
+        match entry.item {
+            Item::Dir(ref dir) => {
+                let mut sub_tree_files = rel_filepaths_in_tree(dir, no_unchanged)
+                    .into_iter()
+                    .map(|files_relative_path| {
+                        let mut cur_dir = Utf8PathBuf::from(name);
+                        cur_dir.push(&files_relative_path);
+                        cur_dir
+                    })
+                    .collect();
+                paths.append(&mut sub_tree_files);
+            }
+            Item::File => {
+                paths.push(name.into());
+            }
+        }
+    }
+
+    paths
 }
