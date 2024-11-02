@@ -306,7 +306,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                         />
                     </nav>
                     <div id="diff-view" class="flex-1">
-                    { for (*files).iter().map(|path| html!{<DiffView diff={diff.clone()} path={path.clone()} /> }) }
+                    { for (*files).iter().map(|path| html!{<LazyDiffView diff={diff.clone()} path={path.clone()} /> }) }
                     </div>
                 </main>
             </Content>
