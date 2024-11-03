@@ -4,10 +4,12 @@ use crate::{
 };
 use bytes::Bytes;
 use camino::Utf8PathBuf;
+use gloo_events::EventListener;
 use log::*;
 use similar::ChangeTag;
 use std::rc::Rc;
 use syntect::highlighting::Style;
+use web_sys::window;
 use yew::prelude::*;
 
 /// Contains information about contiguous changes
@@ -150,7 +152,7 @@ pub fn UnifiedDiffView(props: &AnyDiffViewProps) -> Html {
                                 key={format!("{:?}", range.range)}
                                 group={group.clone()}
                                 {in_context}
-                                group_start_index={(overall_index, range.left_start, range.right_start)}
+                                group_start_index={Into::<ChangeFileIdx>::into((overall_index, range.left_start, range.right_start))}
                             />
                         };
                         overall_index += group.len();
@@ -203,7 +205,7 @@ pub fn SplitDiffView(props: &AnyDiffViewProps) -> Html {
                                 key={format!("{:?}", range)}
                                 group={group.clone()}
                                 {in_context}
-                                group_start_index={(overall_index, range.left_start, range.right_start)}
+                                group_start_index={Into::<ChangeFileIdx>::into((overall_index, range.left_start, range.right_start))}
                             />
                         };
                         overall_index += group.len();
@@ -229,7 +231,62 @@ fn ExpandIcon() -> Html {
 pub struct DiffLineGroupProps {
     group: Vec<(ChangeTag, Vec<(Style, bytes::Bytes)>)>,
     in_context: bool,
-    group_start_index: (usize, usize, usize),
+    group_start_index: ChangeFileIdx,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+struct ChangeFileIdx {
+    pub overall: usize,
+    pub left: usize,
+    pub right: usize,
+}
+
+// TODO: replace calls and rm this trait
+impl std::ops::Index<usize> for ChangeFileIdx {
+    type Output = usize;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.overall,
+            1 => &self.left,
+            2 => &self.right,
+            _ => panic!("Index out of bounds"),
+        }
+    }
+}
+
+impl Into<ChangeFileIdx> for (usize, usize, usize) {
+    fn into(self) -> ChangeFileIdx {
+        ChangeFileIdx {
+            overall: self.0,
+            left: self.1,
+            right: self.2,
+        }
+    }
+}
+
+impl std::ops::Add<usize> for ChangeFileIdx {
+    type Output = ChangeFileIdx;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        ChangeFileIdx {
+            overall: self.overall + rhs,
+            left: self.left + rhs,
+            right: self.right + rhs,
+        }
+    }
+}
+
+impl std::ops::Sub<usize> for ChangeFileIdx {
+    type Output = ChangeFileIdx;
+
+    fn sub(self, rhs: usize) -> Self::Output {
+        ChangeFileIdx {
+            overall: self.overall.saturating_sub(rhs),
+            left: self.left.saturating_sub(rhs),
+            right: self.right.saturating_sub(rhs),
+        }
+    }
 }
 
 #[derive(Properties, PartialEq)]
@@ -240,45 +297,103 @@ pub struct DisplayGroupProps {
 
 #[function_component]
 pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
-    let folded = use_state(|| !props.in_context);
+    fn is_location_in_range(location: &str, start: ChangeFileIdx, end: ChangeFileIdx) -> bool {
+        if let Some(id_str) = location.strip_prefix("#R") {
+            if let Ok(id) = id_str.parse::<usize>() {
+                if id >= start.right && id <= end.right {
+                    return true;
+                }
+            }
+        } else if let Some(id_str) = location.strip_prefix("#L") {
+            if let Ok(id) = id_str.parse::<usize>() {
+                if id >= start.left && id <= end.left {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn called_anchor_of_this(start: ChangeFileIdx, end: ChangeFileIdx) -> Option<String> {
+        window()
+            .and_then(|w| w.location().hash().ok())
+            .filter(|location| is_location_in_range(location, start, end))
+    }
+
+    // go from 0-indexed to 1-indexed
+    let start_index = props.group_start_index + 1;
+
+    // use the fact that folded sections never contain changes
+    let end_index = start_index + props.group.len() - 1;
+
+    let folded = use_state_eq(|| {
+        !props.in_context && !called_anchor_of_this(start_index, end_index).is_some()
+    });
     let onclick = {
         let folded = folded.clone();
         Callback::from(move |_| folded.set(!*folded))
     };
 
-    // go from 0-indexed to 1-indexed
-    let start_index = (
-        props.group_start_index.0 + 1,
-        props.group_start_index.1 + 1,
-        props.group_start_index.2 + 1,
-    );
+    {
+        let folded = folded.clone();
 
-    // use the fact that folded sections never contain changes
-    let end_index = (
-        start_index.0 + props.group.len() - 1,
-        start_index.1 + props.group.len() - 1,
-        start_index.2 + props.group.len() - 1,
-    );
+        use_effect_with({}, move |_| {
+            let handle_hash_change = {
+                let folded = folded.clone();
+                move || {
+                    if called_anchor_of_this(start_index, end_index).is_some() {
+                        folded.set(false);
+                    }
+                }
+            };
+
+            let listener = EventListener::new(&window().unwrap(), "hashchange", move |_| {
+                handle_hash_change();
+            });
+
+            || drop(listener)
+        });
+    }
+
+    // FIXME: for some reason the element is not found on first call, so enforce another one.
+    let called_anchor = use_state_eq(|| false);
+    {
+        let called_anchor_scroll = called_anchor.clone();
+        use_effect(move || {
+            if let Some(location) = called_anchor_of_this(start_index, end_index) {
+                if let Some(element) = window()
+                    .and_then(|w| w.document())
+                    .and_then(|d| d.get_element_by_id(&location.strip_prefix('#').unwrap()))
+                {
+                    element.scroll_into_view();
+                } else {
+                    debug!("Element not found {:?}", location);
+                    called_anchor_scroll.set(true);
+                }
+            }
+        })
+    }
 
     if *folded {
         html! {
-            <div class="expand">
+            <div class="expand" >
                 <button class={classes!("button")} onclick={onclick.clone()}>
                     <ExpandIcon />
                 </button>
                 <button class={classes!("info")} {onclick}>
                     {
-                    if start_index.1 == start_index.2 {
-                        format!("Show lines {:?} to {:?}", start_index.1, end_index.1)
+                    if start_index[1] == start_index[2] {
+                        format!("Show lines {:?} to {:?}", start_index[1], end_index[1])
                     } else {
-                        format!("Show lines {:?} to {:?}", (start_index.1,start_index.2), (end_index.1,end_index.2))
+                        format!("Show lines {:?} to {:?}", (start_index[1],start_index[2]), (end_index[1],end_index[2]))
                     }
                 }
                 </button>
             </div>
         }
     } else {
-        let (mut left_idx, mut right_idx) = (start_index.1, start_index.2);
+        let (mut left_idx, mut right_idx) = (start_index[1], start_index[2]);
         html! {
             <>
             {
