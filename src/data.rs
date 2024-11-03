@@ -90,19 +90,6 @@ pub struct CrateResponse {
     pub versions: Vec<VersionInfo>,
 }
 
-/// Create info struct, returned as part of the crates.io response.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct CrateInfo {
-    pub id: String,
-    pub max_version: String,
-    pub max_stable_version: Option<String>,
-    //pub categories: BTreeSet<String>,
-    //pub description: String,
-    //pub downloads: u64,
-    //pub exact_match: bool,
-    //pub homepage: Option<Url>,
-}
-
 /// Version info struct, returned as part of the crates.io response.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct VersionInfo {
@@ -151,17 +138,25 @@ impl CrateResponse {
 }
 
 impl VersionInfo {
+    /// Get download URL for this crate
+    ///
+    /// We purposefully construct a URL here and don't use the one returned in the response,
+    /// because we want to download it from the CDN instead of from the API (so it does not count
+    /// towards crate downloads).
+    pub fn download_url(&self) -> Result<Url> {
+        let Self { krate, version, .. } = &self;
+        let url = format!("https://static.crates.io/crates/{krate}/{krate}-{version}.crate");
+        let url = url.parse()?;
+        Ok(url)
+    }
+
     /// Fetch a crate source for the given version.
     pub async fn fetch(&self) -> Result<CrateSource> {
         info!(
             "Fetching crate source for {} v{} from network",
             self.krate, self.version
         );
-        let url = format!(
-            "https://static.crates.io/crates/{}/{}-{}.crate",
-            self.krate, self.krate, self.version
-        );
-        let url: Url = url.parse()?;
+        let url = self.download_url()?;
         let response = Request::get(url.as_str()).send().await?;
         if !response.ok() {
             return Err(anyhow!("Error response: {}", response.status()));
@@ -368,7 +363,7 @@ impl CrateSource {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CargoVcsInfoError {
-    #[error("Cargo VCS info missing")]
+    #[error("missing .cargo_vcs_info.json")]
     Missing,
     #[error("cannot decode .cargo_vcs_info.json")]
     Decode(#[from] serde_json::Error),

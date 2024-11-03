@@ -39,8 +39,8 @@ serve:
 # Run checks (same as in CI)
 check:
     cargo +nightly fmt --check
-    cargo clippy -- -D warnings
     cargo deny check
+    cargo clippy -- -D warnings
     cargo test
     trunk build
 
