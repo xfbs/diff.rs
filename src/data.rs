@@ -425,6 +425,21 @@ impl VersionDiff {
         let mut files = BTreeMap::new();
         let mut summary: BTreeMap<Utf8PathBuf, (usize, usize)> = BTreeMap::new();
 
+        let normalize_crlf = |bytes: &Bytes| {
+            let mut normalized = Vec::with_capacity(bytes.len());
+            let mut iter = bytes.iter().peekable();
+
+            while let Some(&byte) = iter.next() {
+                if byte == b'\r' {
+                    if matches!(iter.peek(), Some(&b'\n')) {
+                        continue;
+                    }
+                }
+                normalized.push(byte);
+            }
+            Bytes::from(normalized)
+        };
+
         // intersection of file paths in both left and right crate sources
         let file_paths: BTreeSet<&Utf8Path> = left
             .files
@@ -441,9 +456,23 @@ impl VersionDiff {
             let left = left.files.get(path).cloned().unwrap_or_default();
             let right = right.files.get(path).cloned().unwrap_or_default();
 
+            // Normalize line endings to - nut only if they differ
+            let left_crlf = left.windows(2).any(|w| w == b"\r\n");
+            let right_crlf = right.windows(2).any(|w| w == b"\r\n");
+
+            let left = if left_crlf && !right_crlf {
+                normalize_crlf(&left)
+            } else {
+                left
+            };
+            let right = if right_crlf && !left_crlf {
+                normalize_crlf(&right)
+            } else {
+                right
+            };
+
             // generate text diff
             let diff = TextDiff::from_lines(&left[..], &right[..]);
-
             // collect changes
             let changes: Vec<_> = diff
                 .iter_all_changes()
