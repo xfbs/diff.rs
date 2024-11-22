@@ -3,19 +3,26 @@
     <head>
         <!-- metadata -->
         <meta charset="utf-8" />
-        <meta name="description" content="View what is changed between different versions of crates published on crates.io." />
+        <meta name="description" content="Browse and view Rust crates published on crates.io, view what changed in between released versions, and how it differs from what is in the repository." />
         <!-- use native resolution on mobile, disable auto-zoom -->
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-        <title>diff.rs</title>
-
-        <!-- resources -->
+        <!-- site title -->
+        <title>Diff.rs: Explore Changes Between Rust Crate Versions</title>
+        <!-- stylesheets -->
         <link data-trunk rel="tailwind-css" href="src/tailwind.css">
-        <!-- use wasm-opt to minimize the webassembly output -->
+        <!-- webassembly code, use wasm-opt to minimize the webassembly output -->
         <link data-trunk rel="rust" data-wasm-opt="z">
+        <!-- analytics script -->
         <script
             data-trunk src="static/counter.js"
             data-id="bcaf6280-06af-48e2-8e4c-03817fb76945">
         </script>
+        <!-- static data -->
+        <link data-trunk rel="copy-file" href="static/favicon.ico" />
+        <link data-trunk rel="copy-file" href="static/favicon-16x16.png" />
+        <link data-trunk rel="copy-file" href="static/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <!-- include base URI -->
         <base data-trunk-public-url />
     </head>
