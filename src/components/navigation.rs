@@ -218,7 +218,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
             <div class="navbar-group grow">
                 <div class="navbar-group flex-nowrap">
                     <NavbarItem>
-                        <a href={format!("https://crates.io/crates/{}", src_name)} class="flex flex-row items-center">
+                        <a href={format!("https://crates.io/crates/{src_name}")} class="flex flex-row items-center">
                             <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
                         </a>
                         { src_name.clone() }
@@ -247,7 +247,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 </NavbarItem>
                 <div class="navbar-group flex-nowrap">
                 <NavbarItem>
-                    <a href={format!("https://crates.io/crates/{}", dst_name)} class="flex flex-row items-center">
+                    <a href={format!("https://crates.io/crates/{dst_name}")} class="flex flex-row items-center">
                         <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
                     </a>
                     { dst_name.clone() }
