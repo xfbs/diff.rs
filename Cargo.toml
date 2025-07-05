@@ -26,7 +26,7 @@ sha2 = "0.10.8"
 similar = { version = "2.2.1", features = ["text", "bytes"] }
 strum = { version = "0.26.2", features = ["derive"] }
 subslice-offset = "0.1.1"
-syntect = { version = "5.0.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
+syntect = { version = "5.2.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
 tar = "0.4.38"
 thiserror = "1.0.64"
 url = { version = "2.3.1", features = ["serde"] }

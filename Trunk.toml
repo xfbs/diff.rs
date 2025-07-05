@@ -10,5 +10,5 @@ locked = true
 # bump the versions of these tools occasionally.
 [tools]
 wasm_opt = "version_123"
-wasm_bindgen = "0.2.95"
+wasm_bindgen = "0.2.100"
 tailwindcss = "3.4.17"
