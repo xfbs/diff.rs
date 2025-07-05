@@ -9,6 +9,6 @@ locked = true
 # the versions are specified here to get reproducible builds, make sure to
 # bump the versions of these tools occasionally.
 [tools]
-wasm_opt = "version_119"
+wasm_opt = "version_123"
 wasm_bindgen = "0.2.95"
-tailwindcss = "3.4.14"
+tailwindcss = "3.4.17"

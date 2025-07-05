@@ -28,6 +28,10 @@ setup:
     rustup toolchain add nightly
     cargo install trunk cargo-deny
 
+clean:
+    cargo clean
+    trunk clean
+
 # Format code
 format:
     cargo +nightly fmt
@@ -48,5 +52,9 @@ check:
 build:
     trunk clean
     trunk build --release
+    just compress
+
+# compress assets
+compress:
     find dist -not -name '*.gz' -not -name '*.br' -type f -exec gzip -vk {} \;
     find dist -not -name '*.gz' -not -name '*.br' -type f -exec brotli -vk {} \;
