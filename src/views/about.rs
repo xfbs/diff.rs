@@ -1,11 +1,11 @@
 use crate::components::{Content, Footer, SimpleNavbar};
 use yew::prelude::*;
 
-const TEXT: &'static str = include_str!("about.md");
+const TEXT: &str = include_str!("about.md");
 
 #[function_component]
 fn AboutText() -> Html {
-    let html = comrak::markdown_to_html(&TEXT, &Default::default());
+    let html = comrak::markdown_to_html(TEXT, &Default::default());
     let parsed = Html::from_html_unchecked(AttrValue::from(html));
     html! {
         <div class="prose prose-slate dark:prose-invert max-w-2xl m-auto p-4 pt-12">

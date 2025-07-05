@@ -202,7 +202,7 @@ impl RepositoryInfo {
     }
 
     fn prefix(&self) -> String {
-        let repo = self.repository.path().split('/').last().unwrap_or("");
+        let repo = self.repository.path().split('/').next_back().unwrap_or("");
         let mut prefix = format!("{repo}-{}/", self.vcs_info.git.sha1);
 
         if !self.vcs_info.path_in_vcs.is_empty() {
