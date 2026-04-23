@@ -92,7 +92,7 @@ with some custom ones:
 Then, the utility classes are applied to the style of the custom elements:
 
 ```css
-.my-components {
+.my-component {
     /* render children as a flex-row with some gaps */
     @apply flex flex-row gap-2;
 }
@@ -140,7 +140,7 @@ includes:
   comment explaining their purpose.
 - Code comments, explaining what is being done.
 - Updating `docs/architecture.md` if the contribution changes the high-level
-  architecture of `dif.rs`.
+  architecture of `diff.rs`.
 
 ## Testing
 
@@ -165,7 +165,7 @@ Browsers that should work are:
 - Safari
 
 If possible, use the *Responsive Design Mode* of each browser to verify that
-the side looks good on both small, medium and large screens.
+the site looks good on both small, medium and large screens.
 
 It is not required to support all browsers. For example, some of the components
 will not work for IE. At this point, it is more important that the
@@ -190,5 +190,5 @@ The only advice is to:
 [docs.rs]: https://docs.rs/
 [git-linear]: https://www.bitsnbites.eu/a-tidy-linear-git-history/
 [tailwind]: https://tailwindcss.com/docs/
-[trunk]: https://rustrs.dev/
+[trunk]: https://trunkrs.dev/
 [lto]: https://nnethercote.github.io/perf-book/build-configuration.html#link-time-optimization

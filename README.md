@@ -73,5 +73,5 @@ contribute.
 
 MIT, see [LICENSE.md](LICENSE.md).
 
-[analytics]: https://counter.dev/dashboard.html?user=xfbs&token=4kPlix1Li7w%3D
+[analytics]: https://plausible.io/diff.rs
 [issues]: https://github.com/xfbs/diff.rs/issues

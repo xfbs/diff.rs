@@ -1,6 +1,6 @@
 # Deployment
 
-The workflow for deployment work like this:
+The workflow for deployment works like this:
 
 - Building the frontend using `trunk build --release`
 - Compressing assets using `gzip` and `brotli`
@@ -22,7 +22,7 @@ Deployment is done using [GitLab CI][gitlab-ci]. The
 [configuration](../.gitlab-ci.yml) runs Trunk, and uses `gzip` and `brotli` to
 pre-compress the files. Using compression makes the resulting WebAssembly blob
 and assets significantly smaller, at the time of writing, it makes it go from
-3MB to 1MB. This step consists of:
+3MB to 1MB.
 
 Hosting of the project is provided by [GitLab Pages][gitlab-pages]. The
 resulting files of the building and compression are statically hosted by it.

@@ -32,7 +32,7 @@ updated to get bugfixes and performance enhancements.
 
 In some cases, it makes sense to use an older version of a dependency. For
 example, to avoid needing multiple versions of the same dependency. If
-`diff.rs` depends on `yew`, which uses `gloo-0.4.0`, and it itseld needs
+`diff.rs` depends on `yew`, which uses `gloo-0.4.0`, and it itself needs
 `gloo`, it can make sense for it to depend on the same version, otherwise there
 will be duplicated versions of `gloo`.
 
