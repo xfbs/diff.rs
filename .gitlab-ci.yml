@@ -6,8 +6,8 @@ stages:
   - publish
 
 variables:
-  RUST_VERSION: "1.81"
-  TRUNK_VERSION: "0.21.1"
+  RUST_VERSION: "1.95"
+  TRUNK_VERSION: "0.21.14"
   PUBLIC_URL: "https://diff.rs/"
 
 # Run unit tests
