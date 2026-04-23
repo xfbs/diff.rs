@@ -358,7 +358,7 @@ pub fn CodeLine(props: &CodeLineProps) -> Html {
         .iter()
         .map(|(style, text)| {
             let style = syntect_style_to_css(style);
-            let contents = String::from_utf8_lossy(&text[..]);
+            let contents = String::from_utf8_lossy(&text[..]).into_owned();
             html! {
                 <span style={style}>{contents}</span>
             }

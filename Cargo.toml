@@ -14,7 +14,7 @@ comrak = "0.52.0"
 flate2 = "1.0.25"
 gloo-net = "0.7.0"
 hex = { version = "0.4.3", features = ["serde"] }
-implicit-clone = "0.4.9"
+implicit-clone = "0.6.0"
 indexmap = "2.2.6"
 lazy_static = "1.5.0"
 log = "0.4.17"
@@ -31,9 +31,9 @@ thiserror = "2.0.18"
 url = { version = "2.3.1", features = ["serde"] }
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.61", features = ["HtmlInputElement", "HtmlSelectElement"] }
-yew = { version = "0.21.0", features = ["csr"] }
-yew-hooks = "0.3.1"
-yew-router = "0.18.0"
+yew = { version = "0.23.0", features = ["csr"] }
+yew-hooks = "0.6.4"
+yew-router = "0.20.0"
 
 # enable LTO and use a single codegen-unit to get smaller and more efficient code.
 [profile.release]
