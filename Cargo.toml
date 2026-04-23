@@ -12,19 +12,18 @@ bytes = "1.4.0"
 camino = "1.1.9"
 comrak = "0.29.0"
 flate2 = "1.0.25"
-gloo-net = "0.6.0"
+gloo-net = "0.7.0"
 hex = { version = "0.4.3", features = ["serde"] }
 implicit-clone = "0.4.9"
 indexmap = "2.2.6"
-itertools = "0.13.0"
 lazy_static = "1.5.0"
 log = "0.4.17"
 semver = { version = "1.0.22", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.132"
-sha2 = "0.10.8"
-similar = { version = "2.2.1", features = ["text", "bytes"] }
-strum = { version = "0.26.2", features = ["derive"] }
+sha2 = "0.11.0"
+similar = { version = "3.1.0", features = ["text", "bytes"] }
+strum = { version = "0.28.0", features = ["derive"] }
 subslice-offset = "0.1.1"
 syntect = { version = "5.2.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
 tar = "0.4.38"
