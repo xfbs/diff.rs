@@ -399,7 +399,7 @@ dependencies = [
  "subslice-offset",
  "syntect",
  "tar",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "url",
  "vergen-gitcl",
  "wasm-logger",

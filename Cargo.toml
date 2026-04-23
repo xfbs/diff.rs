@@ -27,7 +27,7 @@ strum = { version = "0.28.0", features = ["derive"] }
 subslice-offset = "0.1.1"
 syntect = { version = "5.2.0", default-features = false, features = ["parsing", "default-syntaxes", "default-themes", "regex-fancy"] }
 tar = "0.4.38"
-thiserror = "1.0.64"
+thiserror = "2.0.18"
 url = { version = "2.3.1", features = ["serde"] }
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.61", features = ["HtmlInputElement", "HtmlSelectElement"] }
