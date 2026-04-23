@@ -574,6 +574,9 @@ impl ChunkInfo {
     pub fn end(&self) -> usize {
         self.range.end
     }
+    pub fn len(&self) -> usize {
+        self.range.len()
+    }
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]

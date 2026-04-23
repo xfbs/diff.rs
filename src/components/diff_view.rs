@@ -9,6 +9,7 @@ use similar::ChangeTag;
 use std::rc::Rc;
 use syntect::highlighting::Style;
 use yew::prelude::*;
+use yew_hooks::use_visible;
 
 /// Contains information about contiguous changes
 #[derive(PartialEq, Clone)]
@@ -127,6 +128,38 @@ pub fn DiffView(props: &DiffViewProps) -> Html {
                     }
                 }
             </div>
+        </div>
+    }
+}
+
+#[function_component]
+pub fn LazyDiffView(props: &DiffViewProps) -> Html {
+    let node = use_node_ref();
+    let visible = use_visible(node.clone(), true);
+
+    let len_estimation = if visible {
+        // no need to estimate
+        None
+    } else {
+        // just to clarify: thisis obviously wrong for files w/o changes (but atm those files are visible anyway)
+        let empty = FileDiff::default();
+        let file_diff = props.diff.files.get(&props.path).unwrap_or(&empty);
+        Some(
+            file_diff
+                .context_ranges
+                .iter()
+                .map(|chunk| chunk.len())
+                .sum::<usize>(),
+        )
+    };
+
+    html! {
+        <div ref={node}>
+            if visible {
+                    <DiffView diff={props.diff.clone()} path={props.path.clone()} />
+            } else {
+               <div style={format!("height: {}px; width: 100%;", len_estimation.unwrap_or(0)*24)} />
+            }
         </div>
     }
 }

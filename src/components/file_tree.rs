@@ -182,7 +182,7 @@ fn FileEntry(props: &FileEntryProps) -> Html {
 
     html! {
         <>
-        <Link to={route} classes={classes!("file-entry", current.then_some("active"))}>
+        <div class={classes!("file-entry", current.then_some("active"))}>
             <button class={classes!("toggle", (*expanded).then_some("active"))} onclick={toggle_expand}>
                 if props.entry.item.is_dir() {
                     <ExpandIcon is_expanded={*expanded} />
@@ -195,9 +195,11 @@ fn FileEntry(props: &FileEntryProps) -> Html {
                     <FileIcon />
                 }
             </div>
-            <div class="name">
-                {&props.entry.name}
-            </div>
+            <Link to={route} classes={classes!("name")}>
+                <div >
+                    {&props.entry.name}
+                </div>
+            </Link>
             <div class="tags">
                 if props.entry.changes.added > 0 {
                     <span class="tag added">{"+"}{props.entry.changes.added}</span>
@@ -206,7 +208,7 @@ fn FileEntry(props: &FileEntryProps) -> Html {
                     <span class="tag removed">{"-"}{props.entry.changes.removed}</span>
                 }
             </div>
-        </Link>
+        </div>
         if props.entry.item.is_dir() && *expanded {
             <SubTree
                 entry={props.entry.clone()}
