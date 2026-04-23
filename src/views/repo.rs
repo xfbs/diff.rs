@@ -208,12 +208,10 @@ fn RepoSourceFetcherInner(props: &RepoSourceFetcherInnerProps) -> HtmlResult {
     Ok(html! {
             <Content>
                 <main class="flex flex-col md:flex-row gap-2 lg:gap-4 p-2">
-                    <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
-                        <FileTree
-                            diff={diff.clone()}
-                            path={props.path.clone()}
-                        />
-                    </nav>
+                    <FileTreeNavigation
+                        diff={diff.clone()}
+                        path={props.path.clone()}
+                    />
                     <div id="diff-view" class="flex-1">
                         <DiffView {diff} path={props.path.clone()} />
                     </div>
