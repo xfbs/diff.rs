@@ -31,11 +31,10 @@ tar = "0.4.38"
 thiserror = "1.0.64"
 url = { version = "2.3.1", features = ["serde"] }
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.61", features = ["HtmlInputElement"] }
+web-sys = { version = "0.3.61", features = ["HtmlInputElement", "HtmlSelectElement"] }
 yew = { version = "0.21.0", features = ["csr"] }
 yew-hooks = "0.3.1"
 yew-router = "0.18.0"
-yewprint = { version = "0.5" }
 
 # enable LTO and use a single codegen-unit to get smaller and more efficient code.
 [profile.release]
