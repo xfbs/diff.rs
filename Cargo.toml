@@ -10,7 +10,7 @@ description = "Web application that renders the diff between two crate versions"
 anyhow = "1.0.69"
 bytes = "1.4.0"
 camino = "1.1.9"
-comrak = "0.29.0"
+comrak = "0.52.0"
 flate2 = "1.0.25"
 gloo-net = "0.7.0"
 hex = { version = "0.4.3", features = ["serde"] }
@@ -43,8 +43,6 @@ codegen-units = 1
 
 # override optimization level of some dependencies for debug mode
 [profile.dev.package.syntect]
-opt-level = 2
-[profile.dev.package.regex]
 opt-level = 2
 [profile.dev.package.regex-automata]
 opt-level = 2
