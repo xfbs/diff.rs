@@ -5,7 +5,31 @@ use semver::Version;
 use std::sync::Arc;
 use web_sys::HtmlSelectElement;
 use yew::prelude::*;
-use yew_icons::{Icon as YewIcon, IconId};
+
+#[function_component]
+fn FileDiffIcon() -> Html {
+    // from https://lucide.dev/icons/file-diff
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" height="1.5ex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+            <path d="M9 10h6" />
+            <path d="M12 13V7" />
+            <path d="M9 17h6" />
+        </svg>
+    }
+}
+
+#[function_component]
+fn BoxIcon() -> Html {
+    // from https://lucide.dev/icons/box
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" height="1.5ex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+            <path d="m3.3 7 8.7 5 8.7-5" />
+            <path d="M12 22V12" />
+        </svg>
+    }
+}
 
 #[derive(Properties, PartialEq)]
 pub struct NavbarProps {
@@ -67,7 +91,7 @@ pub fn SimpleNavbar() -> Html {
             <NavbarGroup>
                 <NavbarHeading>
                     <Link to={Route::Home} classes="flex flex-row items-center">
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} />
+                        <FileDiffIcon />
                         { "diff.rs" }
                     </Link>
                 </NavbarHeading>
@@ -208,7 +232,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
         <Navbar>
             <NavbarHeading>
                 <Link to={Route::Home} classes="flex flex-row items-center">
-                    <YewIcon height={"1.5ex"} icon_id={IconId::LucideFileDiff} />
+                    <FileDiffIcon />
                     <span>{ "diff.rs" }</span>
                 </Link>
             </NavbarHeading>
@@ -219,7 +243,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 <div class="navbar-group flex-nowrap">
                     <NavbarItem>
                         <a href={format!("https://crates.io/crates/{src_name}")} class="flex flex-row items-center">
-                            <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                            <BoxIcon />
                         </a>
                         { src_name.clone() }
                     </NavbarItem>
@@ -248,7 +272,7 @@ pub fn ComplexNavbar(props: &ComplexNavbarProps) -> Html {
                 <div class="navbar-group flex-nowrap">
                 <NavbarItem>
                     <a href={format!("https://crates.io/crates/{dst_name}")} class="flex flex-row items-center">
-                        <YewIcon height={"1.5ex"} icon_id={IconId::LucideBox} />
+                        <BoxIcon />
                     </a>
                     { dst_name.clone() }
                 </NavbarItem>

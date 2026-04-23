@@ -35,7 +35,6 @@ web-sys = { version = "0.3.61", features = ["HtmlInputElement"] }
 yew = { version = "0.21.0", features = ["csr"] }
 yew-hooks = "0.3.1"
 yew-router = "0.18.0"
-yew_icons = { version = "0.8.0", features = ["LucideBox", "LucideFileDiff"] }
 yewprint = { version = "0.5" }
 
 # enable LTO and use a single codegen-unit to get smaller and more efficient code.
