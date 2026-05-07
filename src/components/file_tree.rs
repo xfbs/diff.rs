@@ -22,8 +22,8 @@ impl Context {
         Route::File {
             old_krate: self.old_krate.clone(),
             old_version: self.old_version.clone(),
-            new_krate: self.new_krate.clone(),
-            new_version: self.new_version.clone(),
+            new_krate: self.new_krate.clone().into(),
+            new_version: self.new_version.clone().into(),
             path,
         }
         .simplify()
