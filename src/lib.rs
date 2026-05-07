@@ -8,6 +8,7 @@
 mod cache;
 pub mod components;
 mod data;
+mod maybe_parsed;
 mod syntax;
 #[cfg(test)]
 mod tests;
@@ -15,6 +16,7 @@ mod version;
 pub mod views;
 
 use crate::{
+    maybe_parsed::MaybeParsed,
     version::{VersionId, VersionNamed},
     views::*,
 };
@@ -92,8 +94,13 @@ pub enum Route {
     File {
         old_krate: String,
         old_version: VersionId,
-        new_krate: String,
-        new_version: VersionId,
+        // Handling of `/` in wildcard fields changed in yew-router-0.20 and route
+        // recognizer can match this handler instead of SingleSourceFile.
+        //
+        // The following two fields are parsed optionally and then routed manually in
+        // Route::render method.
+        new_krate: MaybeParsed<VersionId>,
+        new_version: MaybeParsed<VersionId>,
         path: Utf8PathBuf,
     },
 
@@ -177,9 +184,27 @@ impl Route {
                 new_krate,
                 new_version,
                 path,
-            } => html! {
-                <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
-            },
+            } => {
+                // Route manually to keep compatibility with old links.
+                match (new_krate, new_version) {
+                    (MaybeParsed::String(new_krate), MaybeParsed::Parsed(new_version)) => {
+                        // matched /:old_krate/:old_version/:new_krate/:new_version/*path
+                        html! {
+                            <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
+                        }
+                    }
+                    (MaybeParsed::Parsed(new_version), root) => {
+                        // matched /:krate/:old_version/:new_version/:root/*path
+                        Route::render(Route::SingleSourceFile {
+                            krate: old_krate,
+                            old_version,
+                            new_version,
+                            path: Utf8PathBuf::from(String::from(root)).join(path),
+                        })
+                    }
+                    _ => Route::render(Route::NotFound),
+                }
+            }
             Route::NotFound => html! { <NotFound /> },
             Route::Search { query } => html! { <Search search={query} /> },
             Route::RepoFile {
@@ -201,8 +226,8 @@ impl Route {
             Route::File {
                 old_krate,
                 old_version,
-                new_krate,
-                new_version,
+                new_krate: MaybeParsed::String(new_krate),
+                new_version: MaybeParsed::Parsed(new_version),
                 path,
             } if old_krate == new_krate => Route::SingleSourceFile {
                 krate: old_krate,

@@ -206,7 +206,7 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
                         move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                             navigator.push(&Route::File {
                                 old_krate: src_name.clone(),
-                                new_krate: dst_name.clone(),
+                                new_krate: dst_name.clone().into(),
                                 old_version: old.clone().into(),
                                 new_version: new.clone().into(),
                                 path: path.clone().unwrap_or_default().into(),
@@ -230,7 +230,7 @@ fn SourceFetcherInner(props: &SourceFetcherProps) -> HtmlResult {
             return Ok(html! {
                 <Redirect<Route> to={Route::File {
                     old_krate: props.src_info.krate.id.clone(),
-                    new_krate: props.dst_info.krate.id.clone(),
+                    new_krate: props.dst_info.krate.id.clone().into(),
                     old_version: props.old.version.clone().into(),
                     new_version: props.new.version.clone().into(),
                     path: "Cargo.toml".into(),
@@ -283,7 +283,7 @@ pub fn SourceView(props: &SourceViewProps) -> Html {
                     move |((src_name, old), (dst_name, new)): ((String, Version), (String, Version))| {
                         navigator.push(&Route::File {
                             old_krate: src_name.clone(),
-                            new_krate: dst_name.clone(),
+                            new_krate: dst_name.clone().into(),
                             old_version: old.clone().into(),
                             new_version: new.clone().into(),
                             path: path.clone(),
