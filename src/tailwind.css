@@ -226,7 +226,7 @@
     }
 
     .card .header .version {
-        @apply text-gray-600 dark:text-gray-400;
+        @apply text-gray-600 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis;
     }
 
     .card .header .icon {

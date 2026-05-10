@@ -274,7 +274,7 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
             event.prevent_default();
         }
     };
-
+    let show_button = props.diff.left.version.version != props.diff.right.version.version;
     let search_filter = use_state(|| SearchFilter::All);
     let prefix = Rc::new(Utf8PathBuf::default());
     let active = Rc::new(props.path.clone());
@@ -290,20 +290,28 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
         <div class="file-tree">
             <div class="header">
             <FileSearch filter={search_filter.clone()} />
-            <div class="button-group" role="group">
-                    <button
-                        type="button"
-                        class={classes!("first", change_filter.is_all().then_some("active"))}
-                        onclick={change_filter_set(ChangeFilter::All)}>
-                        {"all"}
-                    </button>
-                    <button
-                        type="button"
-                        class={classes!("last", change_filter.is_changed().then_some("active"))}
-                        onclick={change_filter_set(ChangeFilter::Changed)}>
-                        {"changed"}
-                    </button>
-                </div>
+            {
+                if show_button {
+                    html! {
+                        <div class="button-group" role="group">
+                                <button
+                                    type="button"
+                                    class={classes!("first", change_filter.is_all().then_some("active"))}
+                                    onclick={change_filter_set(ChangeFilter::All)}>
+                                    {"all"}
+                                </button>
+                                <button
+                                    type="button"
+                                    class={classes!("last", change_filter.is_changed().then_some("active"))}
+                                    onclick={change_filter_set(ChangeFilter::Changed)}>
+                                    {"changed"}
+                                </button>
+                            </div>
+                    }
+                } else {
+                    html! {}
+                }
+            }
             </div>
         {
             entries
