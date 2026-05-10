@@ -253,73 +253,62 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
         props.group_start_index.2 + 1,
     );
 
-    // use the fact that folded sections never contain changes
-    let end_index = (
-        start_index.0 + props.group.len() - 1,
-        start_index.1 + props.group.len() - 1,
-        start_index.2 + props.group.len() - 1,
-    );
-
+    // render button instead if we are folded.
     if *folded {
-        html! {
+        let hidden = props.group.iter().count();
+        return html! {
             <div class="expand">
                 <button class={classes!("button")} onclick={onclick.clone()}>
                     <ExpandIcon />
                 </button>
                 <button class={classes!("info")} {onclick}>
-                    {
-                    if start_index.1 == start_index.2 {
-                        format!("Show lines {:?} to {:?}", start_index.1, end_index.1)
-                    } else {
-                        format!("Show lines {:?} to {:?}", (start_index.1,start_index.2), (end_index.1,end_index.2))
-                    }
-                }
+                    {format!("Expand {hidden} hidden lines")}
                 </button>
             </div>
-        }
-    } else {
-        let (mut left_idx, mut right_idx) = (start_index.1, start_index.2);
-        html! {
-            <>
-            {
-                props.group.iter().map(|(tag, change)| {
-                    let (sign, class, left, right) = match tag {
-                        ChangeTag::Delete => ("-", "deletion", Some(left_idx), None),
-                        ChangeTag::Insert => ("+", "insertion", None, Some(right_idx)),
-                        ChangeTag::Equal => (" ", "unchanged", Some(left_idx), Some(right_idx)),
-                    };
-                    (left_idx, right_idx) = match tag {
-                        ChangeTag::Delete => (left_idx + 1, right_idx),
-                        ChangeTag::Insert => (left_idx, right_idx + 1),
-                        ChangeTag::Equal => (left_idx + 1, right_idx + 1),
-                    };
+        };
+    }
 
-                    html! {
-                        <div class={classes!("line", class)}>
-                            <a id={left.map(|i| format!("L{i}"))} class="line-number">
-                                if let Some(index) = left {
-                                    {index}
-                                }
-                            </a>
-                            <a id={right.map(|i| format!("R{i}"))} class="line-number">
-                                if let Some(index) = right {
-                                    {index}
-                                }
-                            </a>
-                            <div class="change-icon">
-                                {
-                                    format!("{sign}")
-                                }
-                            </div>
-                            <div class="code-line">
-                                <CodeLine stack={change.clone()} />
-                            </div>
+    let (mut left_idx, mut right_idx) = (start_index.1, start_index.2);
+    html! {
+        <>
+        {
+            props.group.iter().map(|(tag, change)| {
+                let (sign, class, left, right) = match tag {
+                    ChangeTag::Delete => ("-", "deletion", Some(left_idx), None),
+                    ChangeTag::Insert => ("+", "insertion", None, Some(right_idx)),
+                    ChangeTag::Equal => (" ", "unchanged", Some(left_idx), Some(right_idx)),
+                };
+                (left_idx, right_idx) = match tag {
+                    ChangeTag::Delete => (left_idx + 1, right_idx),
+                    ChangeTag::Insert => (left_idx, right_idx + 1),
+                    ChangeTag::Equal => (left_idx + 1, right_idx + 1),
+                };
+
+                html! {
+                    <div class={classes!("line", class)}>
+                        <a id={left.map(|i| format!("L{i}"))} class="line-number">
+                            if let Some(index) = left {
+                                {index}
+                            }
+                        </a>
+                        <a id={right.map(|i| format!("R{i}"))} class="line-number">
+                            if let Some(index) = right {
+                                {index}
+                            }
+                        </a>
+                        <div class="change-icon">
+                            {
+                                format!("{sign}")
+                            }
                         </div>
-                    }
-                }).collect::<Html>()
-            }
-            </>
+                        <div class="code-line">
+                            <CodeLine stack={change.clone()} />
+                        </div>
+                    </div>
+                }
+            }).collect::<Html>()
         }
+        </>
     }
 }
 
