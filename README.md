@@ -22,7 +22,7 @@ it works.
 You need a recent version of Rust, which is most easily installed with
 [rustup.rs](https://rustup.rs).
 
-In addition, you will also need [Trunk](https://trunkrs.dev/), which is a tool
+In addition, you will also need [Trunk](https://trunk-rs.github.io/trunk/), which is a tool
 that helps to build Rust WebAssembly applications, and the WebAssembly build
 target for Rust.  You can install it like this:
 
