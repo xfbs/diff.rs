@@ -54,8 +54,19 @@ pub enum Route {
     Browse { krate: String, version: VersionId },
 
     /// File browse view.
-    #[at("/browse/:krate/:version/*path")]
+    #[at("/browse/:krate/:version/files/*path")]
     BrowseFile {
+        krate: String,
+        version: VersionId,
+        path: Utf8PathBuf,
+    },
+
+    /// Legacy file browse view (without `/files/`), redirects to [Route::BrowseFile].
+    ///
+    /// Needed because otherwise [Route::SingleSourceFile] would win for paths starting with a
+    /// `files` directory.
+    #[at("/browse/:krate/:version/*path")]
+    LegacyBrowseFile {
         krate: String,
         version: VersionId,
         path: Utf8PathBuf,
@@ -81,7 +92,11 @@ pub enum Route {
     },
 
     /// File diff view between `old` and `new` versions.
-    #[at("/:krate/:old_version/:new_version/*path")]
+    ///
+    /// The static `files` segment makes this route outrank [Route::File] in the route recognizer
+    /// (which prefers routes with more static segments, then more dynamic ones, and does not fall
+    /// back to other routes if parameters fail to parse).
+    #[at("/:krate/:old_version/:new_version/files/*path")]
     SingleSourceFile {
         krate: String,
         old_version: VersionId,
@@ -89,17 +104,30 @@ pub enum Route {
         path: Utf8PathBuf,
     },
 
+    /// Legacy single-crate file diff view (without `/files/`), redirects to
+    /// [Route::SingleSourceFile].
+    ///
+    /// Only matches paths with a single component (`/serde/1.0.0/1.0.1/Cargo.toml`), longer ones
+    /// are matched by [Route::File] and handled there.
+    #[at("/:krate/:old_version/:new_version/*path")]
+    LegacySingleSourceFile {
+        krate: String,
+        old_version: VersionId,
+        new_version: VersionId,
+        path: Utf8PathBuf,
+    },
+
     /// File diff view, render differences in the file path between the crate versions.
+    ///
+    /// This also matches legacy single-crate links with nested paths, such as
+    /// `/serde/1.0.0/1.0.1/src/lib.rs`, which are parsed as `new_krate = "1.0.1"` and
+    /// `new_version = "src"`. Therefore `new_version` is parsed optionally, and
+    /// [Route::render] redirects these to [Route::SingleSourceFile].
     #[at("/:old_krate/:old_version/:new_krate/:new_version/*path")]
     File {
         old_krate: String,
         old_version: VersionId,
-        // Handling of `/` in wildcard fields changed in yew-router-0.20 and route
-        // recognizer can match this handler instead of SingleSourceFile.
-        //
-        // The following two fields are parsed optionally and then routed manually in
-        // Route::render method.
-        new_krate: MaybeParsed<VersionId>,
+        new_krate: String,
         new_version: MaybeParsed<VersionId>,
         path: Utf8PathBuf,
     },
@@ -178,33 +206,30 @@ impl Route {
             } => html! {
                 <Diff src_name={krate.clone()} dst_name={krate} old={old_version} new={new_version} {path} />
             },
-            Route::File {
-                old_krate,
-                old_version,
-                new_krate,
-                new_version,
-                path,
-            } => {
-                // Route manually to keep compatibility with old links.
-                match (new_krate, new_version) {
-                    (MaybeParsed::String(new_krate), MaybeParsed::Parsed(new_version)) => {
-                        // matched /:old_krate/:old_version/:new_krate/:new_version/*path
-                        html! {
-                            <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version} {path} />
-                        }
-                    }
-                    (MaybeParsed::Parsed(new_version), root) => {
-                        // matched /:krate/:old_version/:new_version/:root/*path
-                        Route::render(Route::SingleSourceFile {
-                            krate: old_krate,
-                            old_version,
-                            new_version,
-                            path: Utf8PathBuf::from(String::from(root)).join(path),
-                        })
-                    }
-                    _ => Route::render(Route::NotFound),
+            route @ (Route::LegacyBrowseFile { .. } | Route::LegacySingleSourceFile { .. }) => {
+                match route.upgrade() {
+                    Some(to) => html! { <ReplaceRedirect {to} /> },
+                    None => html! { <NotFound /> },
                 }
             }
+            route @ Route::File { .. } => match route.upgrade() {
+                Some(to) => html! { <ReplaceRedirect {to} /> },
+                None => match route {
+                    Route::File {
+                        old_krate,
+                        old_version,
+                        new_krate,
+                        new_version,
+                        path,
+                    } if is_crate_name(&new_krate) => match new_version.parsed() {
+                        Some(new_version) => html! {
+                            <Diff src_name={old_krate} dst_name={new_krate} old={old_version} new={new_version.clone()} {path} />
+                        },
+                        None => html! { <NotFound /> },
+                    },
+                    _ => html! { <NotFound /> },
+                },
+            },
             Route::NotFound => html! { <NotFound /> },
             Route::Search { query } => html! { <Search search={query} /> },
             Route::RepoFile {
@@ -217,6 +242,55 @@ impl Route {
         }
     }
 
+    /// If this route was matched from a legacy URL, returns the route to redirect to.
+    ///
+    /// Legacy URLs are single-crate file links without the `/files/` segment
+    /// (`/serde/1.0.0/1.0.1/src/lib.rs`) and browse links without it
+    /// (`/browse/serde/1.0.0/src/lib.rs`).
+    pub fn upgrade(&self) -> Option<Route> {
+        match self {
+            Route::LegacyBrowseFile {
+                krate,
+                version,
+                path,
+            } => Some(Route::BrowseFile {
+                krate: krate.clone(),
+                version: version.clone(),
+                path: path.clone(),
+            }),
+            Route::LegacySingleSourceFile {
+                krate,
+                old_version,
+                new_version,
+                path,
+            } => Some(Route::SingleSourceFile {
+                krate: krate.clone(),
+                old_version: old_version.clone(),
+                new_version: new_version.clone(),
+                path: path.clone(),
+            }),
+            // Not a valid two-crate link: this may be a legacy single-crate link, where the
+            // "crate name" is actually the new version (crate names cannot start with a digit)
+            // and the "version" is the first path segment, which is kept verbatim.
+            Route::File {
+                old_krate,
+                old_version,
+                new_krate,
+                new_version,
+                path,
+            } if !is_crate_name(new_krate) || new_version.parsed().is_none() => {
+                let legacy_new_version: VersionId = new_krate.parse().ok()?;
+                Some(Route::SingleSourceFile {
+                    krate: old_krate.clone(),
+                    old_version: old_version.clone(),
+                    new_version: legacy_new_version,
+                    path: Utf8PathBuf::from(new_version.raw()).join(path),
+                })
+            }
+            _ => None,
+        }
+    }
+
     /// Try to simplify a route.
     ///
     /// If the route is a multi-crate route, and the crates are identical, then simplify it to
@@ -226,15 +300,17 @@ impl Route {
             Route::File {
                 old_krate,
                 old_version,
-                new_krate: MaybeParsed::String(new_krate),
-                new_version: MaybeParsed::Parsed(new_version),
-                path,
-            } if old_krate == new_krate => Route::SingleSourceFile {
-                krate: old_krate,
-                old_version,
+                new_krate,
                 new_version,
                 path,
-            },
+            } if old_krate == new_krate && new_version.parsed().is_some() => {
+                Route::SingleSourceFile {
+                    krate: old_krate,
+                    old_version,
+                    new_version: new_version.parsed().cloned().unwrap(),
+                    path,
+                }
+            }
             Route::Crates {
                 old_krate,
                 new_krate,
@@ -242,6 +318,33 @@ impl Route {
             other => other,
         }
     }
+}
+
+/// Determines if `name` is a valid crate name (as enforced by crates.io).
+///
+/// Crate names must start with a letter, which is what distinguishes them from versions.
+fn is_crate_name(name: &str) -> bool {
+    let mut chars = name.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+#[derive(Properties, PartialEq)]
+struct ReplaceRedirectProps {
+    to: Route,
+}
+
+/// Redirect which replaces the current history entry (unlike [Redirect], which pushes one), so
+/// that legacy links do not break the back button.
+#[function_component]
+fn ReplaceRedirect(props: &ReplaceRedirectProps) -> Html {
+    let navigator = use_navigator();
+    use_effect_with(props.to.clone(), move |to| {
+        if let Some(navigator) = navigator {
+            navigator.replace(to);
+        }
+    });
+    Html::default()
 }
 
 /// Render application.
