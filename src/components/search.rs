@@ -1,6 +1,6 @@
 use crate::{
     data::{CrateDetail, SearchResponse, SummaryCategory, SummaryResponse},
-    Link, Route,
+    version, Link, Route,
 };
 use gloo_net::http::Request;
 use implicit_clone::unsync::IString;
@@ -172,14 +172,39 @@ struct CardProps {
 
 #[function_component]
 fn Card(props: &CardProps) -> Html {
-    let link = Route::Crate {
-        krate: props.details.id.clone(),
+    let version_clicked = use_state_eq(|| false);
+    let on_version_click = {
+        let clicked = version_clicked.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.stop_propagation();
+            clicked.set(true);
+        })
     };
+
+    // reset link
+    {
+        let clicked = version_clicked.clone();
+        use_effect_with((), move |_| {
+            clicked.set(false);
+        });
+    }
+
+    let link = if *version_clicked {
+        Route::Browse {
+            krate: props.details.id.clone(),
+            version: version::VersionId::Exact(props.details.max_version.clone()),
+        }
+    } else {
+        Route::Crate {
+            krate: props.details.id.clone(),
+        }
+    };
+
     html! {
         <Link to={link} classes="card">
             <div class="header">
                 <h3 class="name">{&props.details.id}</h3>
-                <span class="version">{props.details.max_version.to_string()}</span>
+                <span class="version" title={props.details.max_version.to_string()} onclick={on_version_click.clone()}>{props.details.max_version.to_string()}</span>
                 <span class="grow"></span>
                 <a class="icon" href={format!("https://docs.rs/{}/{}", &props.details.id, &props.details.max_version)}><DocsRsIcon /></a>
                 if let Some(url) = &props.details.repository {
