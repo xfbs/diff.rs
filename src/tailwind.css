@@ -31,6 +31,10 @@
         @apply flex flex-row items-center gap-2 h-8 mb-2 mt-2;
     }
 
+    .file-tree .header .toggle {
+        @apply w-4 shrink-0;
+    }
+
     .file-tree .header .button-group {
         @apply inline-flex rounded-md shadow-sm;
     }

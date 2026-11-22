@@ -9,6 +9,16 @@ use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+macro_rules! toggle_bool {
+    ($bool:expr) => {{
+        let boolean = $bool.clone();
+        Callback::from(move |event: MouseEvent| {
+            event.prevent_default();
+            boolean.set(!*boolean);
+        })
+    }};
+}
+
 #[derive(PartialEq, Clone, Debug)]
 struct Context {
     old_krate: String,
@@ -88,7 +98,16 @@ impl SearchFilter {
 }
 
 #[derive(Properties, PartialEq, Clone)]
+pub struct FileNavigationProps {
+    pub diff: Rc<VersionDiff>,
+    pub path: Utf8PathBuf,
+}
+
+#[derive(Properties, PartialEq, Clone)]
 pub struct FileTreeProps {
+    search_filter: UseStateHandle<SearchFilter>,
+    change_filter: UseStateHandle<ChangeFilter>,
+    is_expanded: UseStateHandle<bool>,
     pub diff: Rc<VersionDiff>,
     pub path: Utf8PathBuf,
 }
@@ -260,22 +279,97 @@ fn SubTree(props: &SubTreeProps) -> Html {
 }
 
 #[function_component]
-pub fn FileTree(props: &FileTreeProps) -> Html {
-    let entries = match props.diff.tree.item.clone() {
-        Item::File => Default::default(),
-        Item::Dir(entries) => entries,
-    };
-
+pub fn FileTreeNavigation(props: &FileNavigationProps) -> Html {
     let change_filter = use_state(|| ChangeFilter::All);
+    let search_filter = use_state(|| SearchFilter::All);
+    let expanded = use_state_eq(|| true);
+
+    if *expanded {
+        html! {
+            <nav id="files" class="md:w-72 lg:w-84 xl:w-96" aria-label="Files">
+                <ExpandedFileTree diff={props.diff.clone()} path={props.path.clone()} is_expanded={expanded.clone()} change_filter={change_filter.clone()} search_filter={search_filter.clone()} />
+            </nav>
+        }
+    } else {
+        html! {
+            <nav id="files" class="w-4" aria-label="Files">
+                <HiddenFileTree diff={props.diff.clone()} path={props.path.clone()} is_expanded={expanded.clone()}  change_filter={change_filter.clone()} search_filter={search_filter.clone()}/>
+            </nav>
+        }
+    }
+}
+
+#[function_component]
+pub fn HiddenFileTree(props: &FileTreeProps) -> Html {
+    html! {
+        <div class="file-tree">
+            <FileTreeNavigationHeader
+                is_expanded={props.is_expanded.clone()}
+                search_filter={props.search_filter.clone()}
+                change_filter={props.change_filter.clone()}
+            />
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct FileTreeNavigationHeaderProps {
+    is_expanded: UseStateHandle<bool>,
+    search_filter: UseStateHandle<SearchFilter>,
+    change_filter: UseStateHandle<ChangeFilter>,
+}
+
+#[function_component]
+pub fn FileTreeNavigationHeader(props: &FileTreeNavigationHeaderProps) -> Html {
     let change_filter_set = |filter: ChangeFilter| {
-        let change_filter = change_filter.clone();
+        let change_filter = props.change_filter.clone();
         move |event: MouseEvent| {
             change_filter.set(filter);
             event.prevent_default();
         }
     };
 
-    let search_filter = use_state(|| SearchFilter::All);
+    if *props.is_expanded {
+        html! {
+         <div class="header">
+             <button class={classes!("toggle", "active")} onclick={toggle_bool!(props.is_expanded)} title="Hide tree">
+                 <ExpandIcon is_expanded=true />
+             </button>
+             <FileSearch filter={props.search_filter.clone()} />
+             <div class="button-group" role="group">
+                 <button
+                     type="button"
+                     class={classes!("first", props.change_filter.is_all().then_some("active"))}
+                     onclick={change_filter_set(ChangeFilter::All)}>
+                     {"all"}
+                 </button>
+                 <button
+                     type="button"
+                     class={classes!("last", props.change_filter.is_changed().then_some("active"))}
+                     onclick={change_filter_set(ChangeFilter::Changed)}>
+                     {"changed"}
+                 </button>
+             </div>
+         </div>
+        }
+    } else {
+        html! {
+            <div class="header">
+            <button class={classes!("toggle")} onclick={toggle_bool!(props.is_expanded)} title="Show File tree">
+                <ExpandIcon is_expanded=false />
+            </button>
+            </div>
+        }
+    }
+}
+
+#[function_component]
+pub fn ExpandedFileTree(props: &FileTreeProps) -> Html {
+    let entries = match props.diff.tree.item.clone() {
+        Item::File => Default::default(),
+        Item::Dir(entries) => entries,
+    };
+
     let prefix = Rc::new(Utf8PathBuf::default());
     let active = Rc::new(props.path.clone());
 
@@ -288,28 +382,16 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
 
     html! {
         <div class="file-tree">
-            <div class="header">
-            <FileSearch filter={search_filter.clone()} />
-            <div class="button-group" role="group">
-                    <button
-                        type="button"
-                        class={classes!("first", change_filter.is_all().then_some("active"))}
-                        onclick={change_filter_set(ChangeFilter::All)}>
-                        {"all"}
-                    </button>
-                    <button
-                        type="button"
-                        class={classes!("last", change_filter.is_changed().then_some("active"))}
-                        onclick={change_filter_set(ChangeFilter::Changed)}>
-                        {"changed"}
-                    </button>
-                </div>
-            </div>
+            <FileTreeNavigationHeader
+                is_expanded={props.is_expanded.clone()}
+                search_filter={props.search_filter.clone()}
+                change_filter={props.change_filter.clone()}
+            />
         {
             entries
                 .into_iter()
-                .filter(|(_, entry)| change_filter.matches(entry.changes))
-                .filter(|(_, entry)| search_filter.matches(&entry.name) || entry.item.is_dir())
+                .filter(|(_, entry)| props.change_filter.matches(entry.changes))
+                .filter(|(_, entry)| props.search_filter.matches(&entry.name) || entry.item.is_dir())
                 .map(|(key, entry)| html! {
                     <FileEntry
                         {key}
@@ -317,8 +399,8 @@ pub fn FileTree(props: &FileTreeProps) -> Html {
                         prefix={prefix.clone()}
                         active={active.clone()}
                         context={context.clone()}
-                        change_filter={*change_filter}
-                        search_filter={(*search_filter).clone()}
+                        change_filter={*props.change_filter}
+                        search_filter={(*props.search_filter).clone()}
                     />
                 })
                 .collect::<Html>()
