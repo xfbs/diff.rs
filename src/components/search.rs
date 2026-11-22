@@ -181,7 +181,7 @@ fn Card(props: &CardProps) -> Html {
                 <h3 class="name">{&props.details.id}</h3>
                 <span class="version">{props.details.max_version.to_string()}</span>
                 <span class="grow"></span>
-                <a class="icon" href={format!("https://docs.rs/{}/{}", &props.details.id, &props.details.max_version)}><DocsRsIcon /></a>
+                <a class="icon" href={format!("https://docs.rs/{}/{}", props.details.id, props.details.max_version)}><DocsRsIcon /></a>
                 if let Some(url) = &props.details.repository {
                     <a class="icon" href={url.to_string()}><GitIcon /></a>
                 }

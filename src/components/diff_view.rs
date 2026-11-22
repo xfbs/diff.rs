@@ -308,7 +308,7 @@ pub fn DiffLineGroup(props: &DiffLineGroupProps) -> Html {
                             </a>
                             <div class="change-icon">
                                 {
-                                    format!("{sign}")
+                                    sign.to_string()
                                 }
                             </div>
                             <div class="code-line">

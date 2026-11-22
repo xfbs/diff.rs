@@ -102,17 +102,19 @@
               src = pkgs.fetchCrate {
                 pname = "wasm-bindgen-cli";
                 # The version of wasm-bindgen-cli here must match the one from Cargo.lock.
-                version = "0.2.100";
-                hash = "sha256-3RJzK7mkYFrs7C/WkhW9Rr4LdP5ofb2FdYGz1P7Uxog=";
+                version = "0.2.130";
+                hash = "sha256-9Og1O/6/VC3sc5hBjoIWBErmLW2UHGMsTQO+6+m/dng=";
               };
 
               cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
                 inherit src;
                 inherit (src) pname version;
-                hash = "sha256-qsO12332HSjWCVKtf1cUePWWb9IdYUmT+8OPj/XP2WE=";
+                hash = "sha256-j81sUf1m5yXU4FJfGj7GV+hdqVCV8mRmNb0QIsMCjqw=";
               };
             };
             trunkExtraBuildArgs = "--verbose --verbose --offline true";
+            # Trunk.toml pins an exact tailwindcss version, use the one from nixpkgs instead.
+            TRUNK_TOOLS_TAILWINDCSS = pkgs.tailwindcss.version;
             nativeBuildInputs = [ pkgs.tailwindcss ];
           }
         );

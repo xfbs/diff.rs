@@ -6,8 +6,8 @@ stages:
   - publish
 
 variables:
-  RUST_VERSION: "1.95"
-  TRUNK_VERSION: "0.21.14"
+  RUST_VERSION: "1.100"
+  TRUNK_VERSION: "0.22.2"
   PUBLIC_URL: "https://diff.rs/"
 
 # Run unit tests
@@ -42,7 +42,7 @@ build:
   image: rust:$RUST_VERSION
   before_script:
     - rustup target add wasm32-unknown-unknown
-    - wget -qO- https://github.com/thedodd/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
+    - wget -qO- https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
   script:
     - trunk build --release --public-url "$PUBLIC_URL"
   artifacts:
